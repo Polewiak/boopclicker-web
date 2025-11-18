@@ -28,3 +28,10 @@ with this repository or its history—the failure occurs before any workflow cod
 
 No changes to the repository files are necessary for this error; re-running the job after
 GitHub resolves the temporary outage is sufficient.
+
+## When to escalate
+
+If repeated retries over the course of ~30 minutes still fail with the same 500/503
+message, capture the workflow URL and the full Actions log and report it via
+https://support.github.com/contact. Include the approximate UTC time of the failures so
+GitHub Support can correlate the request with their internal telemetry.
