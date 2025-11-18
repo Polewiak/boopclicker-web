@@ -18,6 +18,8 @@
         <div class="stat"><span>Total boops:</span><strong id="totalBoops">0</strong></div>
         <div class="stat"><span>BPC:</span><strong id="bpc">1</strong></div>
         <div class="stat"><span>BPS:</span><strong id="bps">0</strong></div>
+        <div class="stat"><span>Crit chance:</span><strong id="critChance">3%</strong></div>
+        <div class="stat"><span>Crit multiplier:</span><strong id="critMultiplier">×7</strong></div>
       </section>
 
       <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
@@ -28,6 +30,7 @@
         <button id="boopButton" class="boop-button" aria-label="Kliknij, aby boopnąć">
           BOOP
         </button>
+        <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
       </section>
 
       <section class="upgrades" aria-label="Upgrade'y">

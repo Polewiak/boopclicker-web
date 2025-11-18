@@ -53,6 +53,9 @@ body {
 
 .boop-panel {
   display: flex;
+  position: relative;
+  justify-content: center;
+  align-items: center;
 }
 
 .boop-button {
@@ -67,6 +70,25 @@ body {
   cursor: pointer;
   transition: transform 120ms ease, filter 120ms ease;
   box-shadow: 0 0.75rem 1.5rem rgba(255, 77, 141, 0.4);
+}
+
+#crit-popup {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translate(-50%, -100%) scale(0.85);
+  font-size: 1.5rem;
+  color: #ff4d6d;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  text-shadow: 0 0 12px rgba(255, 77, 109, 0.6);
+}
+
+#crit-popup.show {
+  opacity: 1;
+  transform: translate(-50%, -130%) scale(1.25);
 }
 
 .boop-button:active {

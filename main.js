@@ -7,6 +7,9 @@ const gameState = {
   totalBoops: 0,
   bpc: 1,
   bps: 0,
+  critChance: 0.03,
+  critMultiplier: 7,
+  lastCritValue: 0,
   upgrades: {
     bpc: { level: 0, baseCost: 10, cost: 10, scale: 1.15 },
     bps: { level: 0, baseCost: 50, cost: 50, scale: 1.17 }
@@ -23,6 +26,8 @@ const ui = {
   totalBoops: document.getElementById('totalBoops'),
   bpc: document.getElementById('bpc'),
   bps: document.getElementById('bps'),
+  critChance: document.getElementById('critChance'),
+  critMultiplier: document.getElementById('critMultiplier'),
   boopButton: document.getElementById('boopButton'),
   bpcLevel: document.getElementById('bpcLevel'),
   bpcCost: document.getElementById('bpcCost'),
@@ -30,7 +35,8 @@ const ui = {
   bpsCost: document.getElementById('bpsCost'),
   bpcBuy: document.getElementById('bpcBuy'),
   bpsBuy: document.getElementById('bpsBuy'),
-  offlineNotice: document.getElementById('offlineNotice')
+  offlineNotice: document.getElementById('offlineNotice'),
+  critPopup: document.getElementById('crit-popup')
 };
 
 function initGame() {
@@ -65,6 +71,10 @@ function loadGame() {
         bps: { ...gameState.upgrades.bps, ...data.upgrades?.bps }
       }
     });
+
+    if (typeof gameState.critChance !== 'number') gameState.critChance = 0.03;
+    if (typeof gameState.critMultiplier !== 'number') gameState.critMultiplier = 7;
+    if (typeof gameState.lastCritValue !== 'number') gameState.lastCritValue = 0;
   } catch (error) {
     console.warn('Nie udało się wczytać zapisu', error);
   }
@@ -96,6 +106,12 @@ function updateUI() {
   ui.totalBoops.textContent = numberFormatter.format(Math.floor(gameState.totalBoops));
   ui.bpc.textContent = numberFormatter.format(gameState.bpc);
   ui.bps.textContent = numberFormatter.format(gameState.bps);
+  if (ui.critChance) {
+    ui.critChance.textContent = formatCritChance(gameState.critChance);
+  }
+  if (ui.critMultiplier) {
+    ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
+  }
 
   ui.bpcLevel.textContent = gameState.upgrades.bpc.level;
   ui.bpcCost.textContent = numberFormatter.format(gameState.upgrades.bpc.cost);
@@ -107,7 +123,17 @@ function updateUI() {
 }
 
 function doBoop() {
-  addBoops(gameState.bpc);
+  const baseGain = gameState.bpc;
+  const isCrit = Math.random() < gameState.critChance;
+  let gain = baseGain;
+
+  if (isCrit) {
+    gain = Math.round(baseGain * gameState.critMultiplier);
+    gameState.lastCritValue = gain;
+    showCritPopup(gain);
+  }
+
+  addBoops(gain);
   updateUI();
   saveGame();
 }
@@ -177,6 +203,20 @@ function announceOfflineGain(gain, seconds) {
   offlineNoticeTimeout = setTimeout(() => {
     ui.offlineNotice.hidden = true;
   }, 4500);
+}
+
+function showCritPopup(value) {
+  if (!ui.critPopup) return;
+  ui.critPopup.textContent = `CRITICAL! +${numberFormatter.format(Math.floor(value))}`;
+  ui.critPopup.classList.add('show');
+  setTimeout(() => {
+    ui.critPopup?.classList.remove('show');
+  }, 300);
+}
+
+function formatCritChance(value) {
+  const percent = (value * 100).toFixed(1);
+  return `${percent.endsWith('.0') ? percent.slice(0, -2) : percent}%`;
 }
 
 initGame();
