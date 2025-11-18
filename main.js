@@ -1,10 +1,12 @@
 const STORAGE_KEY = 'boopclicker-save-v5';
 const SAVE_INTERVAL_SECONDS = 5;
+const LOOP_INTERVAL_MS = 100;
 const BASE_BPC = 1;
 const BASE_BPS = 0;
 const BASE_CRIT_CHANCE = 0.03;
 const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
+const DEBUG_BOOST_AMOUNT = 10_000_000;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 
 const bpcUpgradesConfig = [
@@ -185,6 +187,7 @@ const gameState = {
 let intervalId = null;
 let saveTimer = 0;
 let offlineNoticeTimeout = null;
+let passiveGainRemainder = 0;
 
 const ui = {
   boops: document.getElementById('boops'),
@@ -211,6 +214,8 @@ const ui = {
   statsTotalCrits: document.getElementById('stats-total-crits'),
   statsTotalPrestiges: document.getElementById('stats-total-prestiges'),
   achievementsContainer: document.getElementById('achievements-container'),
+  debugAddBoopsButton: document.getElementById('debug-add-boops'),
+  debugResetButton: document.getElementById('debug-reset'),
 };
 
 function initGame() {
@@ -221,7 +226,7 @@ function initGame() {
   if (intervalId) {
     clearInterval(intervalId);
   }
-  intervalId = setInterval(gameLoop, 1000);
+  intervalId = setInterval(gameLoop, LOOP_INTERVAL_MS);
 }
 
 function attachHandlers() {
@@ -229,6 +234,8 @@ function attachHandlers() {
   ui.prestigeButton?.addEventListener('click', () => {
     doPrestige();
   });
+  ui.debugAddBoopsButton?.addEventListener('click', grantDebugBoops);
+  ui.debugResetButton?.addEventListener('click', handleDebugResetClick);
   window.addEventListener('beforeunload', saveGame);
 }
 
@@ -301,7 +308,7 @@ function saveGame() {
     offlineEfficiency: gameState.offlineEfficiency,
     prestigeThreshold: gameState.prestigeThreshold,
     stats: gameState.stats,
-    lastUpdate: Date.now(),
+    lastUpdate: gameState.lastUpdate || Date.now(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
@@ -456,12 +463,16 @@ function getEffectiveCritChance() {
 
 function applyOfflineProgress() {
   const now = Date.now();
-  const secondsPassed = Math.floor((now - (gameState.lastUpdate || now)) / 1000);
+  const secondsPassed = Math.max(0, (now - (gameState.lastUpdate || now)) / 1000);
   const passiveRate = getFinalBps();
   if (secondsPassed > 0 && passiveRate > 0) {
     const baseGain = secondsPassed * passiveRate * gameState.offlineEfficiency;
-    const actualGain = addBoops(Math.floor(baseGain));
-    announceOfflineGain(actualGain, secondsPassed);
+    const gainInteger = Math.floor(baseGain);
+    passiveGainRemainder = baseGain - gainInteger;
+    const actualGain = addBoops(gainInteger);
+    announceOfflineGain(actualGain, Math.round(secondsPassed));
+  } else {
+    passiveGainRemainder = 0;
   }
   gameState.lastUpdate = now;
 }
@@ -824,20 +835,66 @@ function buyMetaPerk(id) {
   saveGame();
 }
 
+function grantDebugBoops() {
+  const gained = addBoops(DEBUG_BOOST_AMOUNT);
+  if (gained <= 0) {
+    return;
+  }
+  updateUI();
+  saveGame();
+}
+
+function handleDebugResetClick() {
+  const confirmed = window.confirm('Na pewno zresetować cały zapis?');
+  if (!confirmed) {
+    return;
+  }
+  hardResetGame();
+}
+
+function hardResetGame() {
+  localStorage.removeItem(STORAGE_KEY);
+  gameState.boops = 0;
+  gameState.totalBoops = 0;
+  gameState.bpc = BASE_BPC;
+  gameState.bps = BASE_BPS;
+  gameState.boopEssence = 0;
+  gameState.globalMultiplier = 1;
+  gameState.critChance = BASE_CRIT_CHANCE;
+  gameState.lastCritValue = 0;
+  gameState.bpcUpgrades = bpcUpgradesConfig.map((upgrade) => ({ ...upgrade }));
+  gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
+  gameState.metaPerks = metaPerksConfig.map((perk) => ({ ...perk }));
+  gameState.achievements = achievementsConfig.map((achievement) => ({ ...achievement }));
+  gameState.stats = { totalClicks: 0, totalCrits: 0, totalPrestiges: 0 };
+  gameState.currentFaction = null;
+  gameState.factionBonus = { crit: 0, bps: 0, bpc: 0 };
+  passiveGainRemainder = 0;
+  saveTimer = 0;
+  gameState.lastUpdate = Date.now();
+  recalculateProductionStats();
+  updateGlobalMultiplier();
+  saveGame();
+  updateUI();
+}
+
 function gameLoop() {
   const now = Date.now();
-  const elapsedSeconds = Math.floor((now - gameState.lastUpdate) / 1000);
-  const secondsToApply = Math.max(1, elapsedSeconds);
+  const elapsedSeconds = Math.max(0, (now - gameState.lastUpdate) / 1000);
   const passiveGainPerSecond = getFinalBps();
-  if (passiveGainPerSecond > 0) {
-    const gain = Math.floor(secondsToApply * passiveGainPerSecond);
-    addBoops(gain);
+  if (passiveGainPerSecond > 0 && elapsedSeconds > 0) {
+    const rawGain = passiveGainPerSecond * elapsedSeconds + passiveGainRemainder;
+    const gain = Math.floor(rawGain);
+    passiveGainRemainder = rawGain - gain;
+    if (gain > 0) {
+      addBoops(gain);
+    }
   }
   gameState.lastUpdate = now;
-  saveTimer += secondsToApply;
+  saveTimer += elapsedSeconds;
 
-  if (saveTimer >= SAVE_INTERVAL_SECONDS) {
-    saveTimer = 0;
+  while (saveTimer >= SAVE_INTERVAL_SECONDS) {
+    saveTimer -= SAVE_INTERVAL_SECONDS;
     saveGame();
   }
 
