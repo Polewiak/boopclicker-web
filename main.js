@@ -227,6 +227,13 @@ const ui = {
   quickEssence: document.getElementById('essence-quick'),
 };
 
+const storeTooltip = {
+  root: document.getElementById('store-tooltip'),
+  name: document.getElementById('store-tooltip-name'),
+  description: document.getElementById('store-tooltip-description'),
+  extra: document.getElementById('store-tooltip-extra'),
+};
+
 function initGame() {
   setupAccordions();
   loadGame();
@@ -561,7 +568,109 @@ function updatePrestigeUI() {
   }
 }
 
+function hideStoreTooltip() {
+  storeTooltip.root?.classList.add('hidden');
+}
+
+function showStoreTooltip(data) {
+  if (!storeTooltip.root || !storeTooltip.name || !storeTooltip.description || !storeTooltip.extra) {
+    return;
+  }
+  storeTooltip.name.textContent = data.name || '';
+  storeTooltip.description.textContent = data.description || '';
+  storeTooltip.extra.textContent = data.extra || '';
+  storeTooltip.root.classList.remove('hidden');
+}
+
+function attachStoreRowEvents(row, data) {
+  if (!storeTooltip.root) return;
+  const updateTooltipPosition = (event) => {
+    if (!storeTooltip.root) return;
+    const offset = 16;
+    storeTooltip.root.style.left = `${event.pageX + offset}px`;
+    storeTooltip.root.style.top = `${event.pageY + offset}px`;
+  };
+
+  row.addEventListener('mouseenter', (event) => {
+    showStoreTooltip(data);
+    updateTooltipPosition(event);
+  });
+  row.addEventListener('mousemove', updateTooltipPosition);
+  row.addEventListener('mouseleave', hideStoreTooltip);
+  row.addEventListener('focus', (event) => {
+    showStoreTooltip(data);
+    const target = event.target;
+    if (target instanceof HTMLElement && storeTooltip.root) {
+      const rect = target.getBoundingClientRect();
+      storeTooltip.root.style.left = `${rect.right + 12}px`;
+      storeTooltip.root.style.top = `${rect.top + window.scrollY}px`;
+    }
+  });
+  row.addEventListener('blur', hideStoreTooltip);
+  row.addEventListener('click', () => handleStoreRowPurchase(data));
+  row.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleStoreRowPurchase(data);
+    }
+  });
+}
+
+function handleStoreRowPurchase(data) {
+  if (data.disabled) {
+    return;
+  }
+  if (data.type === 'click') {
+    buyBpcUpgrade(data.id);
+  } else if (data.type === 'auto') {
+    buyAutoBooper(data.id);
+  }
+}
+
+function createStoreRow({ icon, name, subLabel, costLabel, dataset, affordable, disabled, tooltipData }) {
+  const row = document.createElement('div');
+  row.className = 'store-row';
+  if (affordable) {
+    row.classList.add('affordable');
+  }
+  if (disabled) {
+    row.classList.add('disabled');
+    row.setAttribute('aria-disabled', 'true');
+  }
+  row.dataset.id = dataset.id;
+  row.dataset.type = dataset.type;
+  row.setAttribute('tabindex', '0');
+  row.setAttribute('role', 'button');
+  row.setAttribute('aria-label', `${name} (${costLabel})`);
+
+  const iconEl = document.createElement('div');
+  iconEl.className = 'store-icon';
+  iconEl.textContent = icon;
+
+  const main = document.createElement('div');
+  main.className = 'store-main';
+  const nameEl = document.createElement('div');
+  nameEl.className = 'store-name';
+  nameEl.textContent = name;
+  main.appendChild(nameEl);
+  if (subLabel) {
+    const subEl = document.createElement('div');
+    subEl.className = 'store-sub';
+    subEl.textContent = subLabel;
+    main.appendChild(subEl);
+  }
+
+  const costEl = document.createElement('div');
+  costEl.className = 'store-cost';
+  costEl.textContent = costLabel;
+
+  row.append(iconEl, main, costEl);
+  attachStoreRowEvents(row, { ...tooltipData, type: dataset.type, id: dataset.id, disabled });
+  return row;
+}
+
 function renderUpgrades() {
+  hideStoreTooltip();
   renderBpcUpgrades();
   renderAutoBoopers();
 }
@@ -571,55 +680,41 @@ function renderBpcUpgrades() {
   if (!container) return;
   container.innerHTML = '';
 
-  const availableUpgrades = gameState.bpcUpgrades.filter((upgrade) => !upgrade.purchased);
-  if (availableUpgrades.length === 0) {
-    const done = document.createElement('p');
-    done.className = 'upgrade-empty';
-    done.textContent = 'Wszystkie klikane ulepszenia kupione.';
-    container.appendChild(done);
-    return;
-  }
-
-  const unlocked = availableUpgrades.filter((upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost));
-  const locked = availableUpgrades.filter((upgrade) => gameState.totalBoops < (upgrade.unlockAt ?? upgrade.cost));
+  const unlocked = gameState.bpcUpgrades.filter(
+    (upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost)
+  );
+  const locked = gameState.bpcUpgrades.filter(
+    (upgrade) => !upgrade.purchased && gameState.totalBoops < (upgrade.unlockAt ?? upgrade.cost)
+  );
 
   if (unlocked.length === 0) {
     const lockedInfo = document.createElement('p');
     lockedInfo.className = 'locked-upgrade';
     lockedInfo.textContent = 'Klikane ulepszenia odblokują się po zdobyciu większej liczby boops.';
     container.appendChild(lockedInfo);
+    return;
   }
 
   const fragment = document.createDocumentFragment();
   unlocked.forEach((upgrade) => {
-    const card = document.createElement('article');
-    card.className = 'upgrade-card';
-
-    const title = document.createElement('h3');
-    title.textContent = upgrade.name;
-
-    const description = document.createElement('p');
-    description.textContent = upgrade.description;
-
-    const bonus = document.createElement('p');
-    bonus.innerHTML = `Bonus: <strong>+${numberFormatter.format(upgrade.bonusBpc)} BPC</strong>`;
-
-    const cost = document.createElement('p');
-    cost.innerHTML = `Koszt: <strong>${numberFormatter.format(upgrade.cost)}</strong> boops`;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'buy-button';
-    button.textContent = 'Buy';
-    const canAfford = gameState.boops >= upgrade.cost;
-    button.disabled = !canAfford;
-    button.classList.toggle('disabled', !canAfford);
-    button.classList.toggle('is-affordable', canAfford);
-    card.classList.toggle('affordable', canAfford);
-    button.addEventListener('click', () => buyBpcUpgrade(upgrade.id));
-
-    card.append(title, description, bonus, cost, button);
-    fragment.appendChild(card);
+    const canAfford = !upgrade.purchased && gameState.boops >= upgrade.cost;
+    const row = createStoreRow({
+      icon: '🐾',
+      name: upgrade.name,
+      subLabel: upgrade.purchased ? 'Purchased' : 'Unlocked',
+      costLabel: upgrade.purchased
+        ? 'Purchased'
+        : `${numberFormatter.format(upgrade.cost)} boops`,
+      dataset: { id: upgrade.id, type: 'click' },
+      affordable: canAfford,
+      disabled: upgrade.purchased,
+      tooltipData: {
+        name: upgrade.name,
+        description: upgrade.description,
+        extra: `+${numberFormatter.format(upgrade.bonusBpc)} BPC`,
+      },
+    });
+    fragment.appendChild(row);
   });
 
   container.appendChild(fragment);
@@ -647,36 +742,22 @@ function renderAutoBoopers() {
 
   const fragment = document.createDocumentFragment();
   gameState.autoBoopers.forEach((booper) => {
-    const card = document.createElement('article');
-    card.className = 'upgrade-card';
-
-    const title = document.createElement('h3');
-    title.textContent = booper.name;
-
-    const description = document.createElement('p');
-    description.textContent = booper.description;
-
-    const meta = document.createElement('p');
-    meta.innerHTML = `Poziom: <strong>${numberFormatter.format(booper.level)}</strong> · Bonus: <strong>+${numberFormatter.format(
-      booper.bonusBpsPerLevel
-    )} BPS/poziom</strong>`;
-
-    const cost = document.createElement('p');
-    cost.innerHTML = `Aktualny koszt: <strong>${numberFormatter.format(booper.currentCost)}</strong> boops`;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'buy-button';
-    button.textContent = 'Buy';
     const canAfford = gameState.boops >= booper.currentCost;
-    button.disabled = !canAfford;
-    button.classList.toggle('disabled', !canAfford);
-    button.classList.toggle('is-affordable', canAfford);
-    card.classList.toggle('affordable', canAfford);
-    button.addEventListener('click', () => buyAutoBooper(booper.id));
-
-    card.append(title, description, meta, cost, button);
-    fragment.appendChild(card);
+    const row = createStoreRow({
+      icon: '🏭',
+      name: booper.name,
+      subLabel: `Owned: ${numberFormatter.format(booper.level)}`,
+      costLabel: `${numberFormatter.format(booper.currentCost)} boops`,
+      dataset: { id: booper.id, type: 'auto' },
+      affordable: canAfford,
+      disabled: false,
+      tooltipData: {
+        name: booper.name,
+        description: booper.description,
+        extra: `+${numberFormatter.format(booper.bonusBpsPerLevel)} BPS / lvl`,
+      },
+    });
+    fragment.appendChild(row);
   });
 
   container.appendChild(fragment);

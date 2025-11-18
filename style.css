@@ -117,34 +117,90 @@ body {
   display: block;
 }
 
+#col-right {
+  background: #1b1b1b;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
 #col-right section {
   background: #1b1b1b;
-  padding: 12px;
+  padding: 0;
   border-radius: 8px;
   margin-bottom: 20px;
-  border: 1px solid #333;
+  border: none;
 }
 
-.upgrades-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.upgrade-card {
-  padding: 8px;
-  margin-bottom: 8px;
-  background: #242424;
-  border-radius: 6px;
-  border: 1px solid #3d3d3d;
+.store-container {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.upgrade-card.affordable {
+.store-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: #242424;
+  border-radius: 4px;
+  border: 1px solid #3a3a3a;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.store-row:hover {
+  background: #2e2e2e;
+}
+
+.store-row.affordable {
   border-color: #6bff7a;
-  box-shadow: 0 0 6px #6bff7a;
+  box-shadow: 0 0 5px #6bff7a;
+}
+
+.store-row.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.store-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.store-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.store-name {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.store-sub {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.store-cost {
+  min-width: 90px;
+  text-align: right;
+  font-size: 12px;
 }
 
 .upgrade-empty {
@@ -576,6 +632,38 @@ body {
 
 .debug-actions button:hover {
   background: #3a3a3a;
+}
+
+.store-row + .locked-upgrade {
+  margin-top: 8px;
+}
+
+#store-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #222;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  max-width: 260px;
+  z-index: 9999;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+#store-tooltip.hidden {
+  display: none;
+}
+
+#store-tooltip-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+#store-tooltip-extra {
+  margin-top: 4px;
+  color: #90f5a3;
 }
 
 .footnote {
