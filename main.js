@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'boopclicker-save-v2';
+const STORAGE_KEY = 'boopclicker-save-v3';
 const SAVE_INTERVAL_SECONDS = 5;
 const BASE_BPC = 1;
 const BASE_BPS = 0;
@@ -6,95 +6,61 @@ const numberFormatter = new Intl.NumberFormat('pl-PL');
 
 const clickUpgradesConfig = [
   {
-    id: 'soft_paw_tap',
-    name: 'Soft Paw Tap',
-    description: 'Delikatne trącenie łapką. +1 BPC na poziom.',
-    level: 0,
-    baseCost: 10,
-    currentCost: 10,
-    scale: 1.15,
-    bonusBpc: 1,
-    bonusBps: 0,
-  },
-  {
     id: 'energetic_ear_flicker',
     name: 'Energetic Ear Flicker',
-    description: 'Szybkie potrząśnięcie uszami dla +5 BPC na poziom.',
-    level: 0,
-    baseCost: 100,
-    currentCost: 100,
-    scale: 1.15,
+    description: 'Szybkie potrząśnięcie uszami dla +5 BPC.',
     bonusBpc: 5,
     bonusBps: 0,
+    cost: 100,
+    purchased: false,
   },
   {
     id: 'boy_bopper',
     name: 'Boy Bopper',
-    description: 'Nieco silniejszy kumpel dodający +20 BPC na poziom.',
-    level: 0,
-    baseCost: 500,
-    currentCost: 500,
-    scale: 1.17,
+    description: 'Silniejszy kumpel dodający +20 BPC.',
     bonusBpc: 20,
     bonusBps: 0,
+    cost: 500,
+    purchased: false,
   },
   {
     id: 'himbo_hooters',
     name: 'Himbo Hooters',
-    description: 'Drużyna himbo zwiększa BPC o +80 na poziom.',
-    level: 0,
-    baseCost: 2000,
-    currentCost: 2000,
-    scale: 1.18,
+    description: 'Drużyna himbo zwiększa BPC o +80.',
     bonusBpc: 80,
     bonusBps: 0,
+    cost: 2000,
+    purchased: false,
   },
 ];
 
 const autoUpgradesConfig = [
   {
-    id: 'feral_toaster',
-    name: 'Feral Toaster',
-    description: 'Wypluwa pasywne boopy: +1 BPS na poziom.',
-    level: 0,
-    baseCost: 50,
-    currentCost: 50,
-    scale: 1.17,
-    bonusBpc: 0,
-    bonusBps: 1,
-  },
-  {
     id: 'overworked_fox_intern',
     name: 'Overworked Fox Intern',
-    description: 'Ambitny lis dodaje +8 BPS na poziom.',
-    level: 0,
-    baseCost: 300,
-    currentCost: 300,
-    scale: 1.18,
+    description: 'Ambitny lis dodaje +8 BPS.',
     bonusBpc: 0,
     bonusBps: 8,
+    cost: 300,
+    purchased: false,
   },
   {
     id: 'wolfgirl_call_center',
     name: 'Wolfgirl Call Center',
-    description: 'Całe call center produkuje +45 BPS na poziom.',
-    level: 0,
-    baseCost: 2000,
-    currentCost: 2000,
-    scale: 1.18,
+    description: 'Całe call center produkuje +45 BPS.',
     bonusBpc: 0,
     bonusBps: 45,
+    cost: 2000,
+    purchased: false,
   },
   {
     id: 'boomerang_otter_crew',
     name: 'Boomerang Otter Crew',
-    description: 'Wydajne wydry przynoszą +250 BPS na poziom.',
-    level: 0,
-    baseCost: 12000,
-    currentCost: 12000,
-    scale: 1.19,
+    description: 'Wydajne wydry przynoszą +250 BPS.',
     bonusBpc: 0,
     bonusBps: 250,
+    cost: 12000,
+    purchased: false,
   },
 ];
 
@@ -172,7 +138,15 @@ function loadGame() {
 
 function saveGame() {
   const payload = {
-    ...gameState,
+    boops: gameState.boops,
+    totalBoops: gameState.totalBoops,
+    bpc: gameState.bpc,
+    bps: gameState.bps,
+    critChance: gameState.critChance,
+    critMultiplier: gameState.critMultiplier,
+    lastCritValue: gameState.lastCritValue,
+    upgradesClick: gameState.upgradesClick,
+    upgradesAuto: gameState.upgradesAuto,
     lastUpdate: Date.now(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -183,8 +157,7 @@ function restoreUpgradeList(savedList, defaults) {
     const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === upgrade.id) : null;
     return {
       ...upgrade,
-      level: saved?.level ?? upgrade.level,
-      currentCost: saved?.currentCost ?? upgrade.currentCost ?? upgrade.baseCost,
+      purchased: saved?.purchased ?? upgrade.purchased ?? false,
     };
   });
 }
@@ -193,10 +166,14 @@ function recalculateProductionStats() {
   gameState.bpc = BASE_BPC;
   gameState.bps = BASE_BPS;
   gameState.upgradesClick.forEach((upgrade) => {
-    gameState.bpc += upgrade.level * (upgrade.bonusBpc || 0);
+    if (upgrade.purchased) {
+      gameState.bpc += upgrade.bonusBpc || 0;
+    }
   });
   gameState.upgradesAuto.forEach((upgrade) => {
-    gameState.bps += upgrade.level * (upgrade.bonusBps || 0);
+    if (upgrade.purchased) {
+      gameState.bps += upgrade.bonusBps || 0;
+    }
   });
 }
 
@@ -236,41 +213,46 @@ function renderUpgradeList(list, container, type) {
   container.innerHTML = '';
   const fragment = document.createDocumentFragment();
 
-  list.forEach((upgrade) => {
-    const card = document.createElement('article');
-    card.className = 'upgrade-card';
+  list
+    .filter((upgrade) => !upgrade.purchased)
+    .forEach((upgrade) => {
+      const card = document.createElement('article');
+      card.className = 'upgrade-card';
 
-    const title = document.createElement('h3');
-    title.textContent = upgrade.name;
+      const title = document.createElement('h3');
+      title.textContent = upgrade.name;
 
-    const description = document.createElement('p');
-    description.textContent = upgrade.description;
+      const description = document.createElement('p');
+      description.textContent = upgrade.description;
 
-    const level = document.createElement('p');
-    level.innerHTML = `Poziom: <strong>${upgrade.level}</strong>`;
+      const effect = document.createElement('p');
+      const bonusText = upgrade.bonusBpc
+        ? `+${numberFormatter.format(upgrade.bonusBpc)} BPC`
+        : `+${numberFormatter.format(upgrade.bonusBps)} BPS`;
+      effect.innerHTML = `Bonus: <strong>${bonusText}</strong>`;
 
-    const cost = document.createElement('p');
-    cost.innerHTML = `Koszt: <strong>${numberFormatter.format(Math.ceil(upgrade.currentCost))}</strong> boops`;
+      const cost = document.createElement('p');
+      cost.innerHTML = `Koszt: <strong>${numberFormatter.format(upgrade.cost)}</strong> boops`;
 
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'buy-button';
-    button.textContent = 'Buy';
-    const canAfford = gameState.boops >= upgrade.currentCost;
-    button.disabled = !canAfford;
-    button.classList.toggle('disabled', !canAfford);
-    button.classList.toggle('is-affordable', canAfford);
-    button.addEventListener('click', () => {
-      if (type === 'click') {
-        buyClickUpgrade(upgrade.id);
-      } else {
-        buyAutoUpgrade(upgrade.id);
-      }
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'buy-button';
+      button.textContent = 'Buy';
+      const canAfford = gameState.boops >= upgrade.cost;
+      button.disabled = !canAfford;
+      button.classList.toggle('disabled', !canAfford);
+      button.classList.toggle('is-affordable', canAfford);
+      button.addEventListener('click', () => {
+        if (type === 'click') {
+          buyClickUpgrade(upgrade.id);
+        } else {
+          buyAutoUpgrade(upgrade.id);
+        }
+      });
+
+      card.append(title, description, effect, cost, button);
+      fragment.appendChild(card);
     });
-
-    card.append(title, description, level, cost, button);
-    fragment.appendChild(card);
-  });
 
   container.appendChild(fragment);
 }
@@ -293,12 +275,11 @@ function doBoop() {
 
 function buyClickUpgrade(id) {
   const upgrade = gameState.upgradesClick.find((item) => item.id === id);
-  if (!upgrade || gameState.boops < upgrade.currentCost) return;
+  if (!upgrade || upgrade.purchased || gameState.boops < upgrade.cost) return;
 
-  gameState.boops -= upgrade.currentCost;
-  upgrade.level += 1;
-  gameState.bpc += upgrade.bonusBpc;
-  upgrade.currentCost = Math.ceil(upgrade.currentCost * upgrade.scale);
+  gameState.boops -= upgrade.cost;
+  upgrade.purchased = true;
+  recalculateProductionStats();
 
   updateUI();
   saveGame();
@@ -306,12 +287,11 @@ function buyClickUpgrade(id) {
 
 function buyAutoUpgrade(id) {
   const upgrade = gameState.upgradesAuto.find((item) => item.id === id);
-  if (!upgrade || gameState.boops < upgrade.currentCost) return;
+  if (!upgrade || upgrade.purchased || gameState.boops < upgrade.cost) return;
 
-  gameState.boops -= upgrade.currentCost;
-  upgrade.level += 1;
-  gameState.bps += upgrade.bonusBps;
-  upgrade.currentCost = Math.ceil(upgrade.currentCost * upgrade.scale);
+  gameState.boops -= upgrade.cost;
+  upgrade.purchased = true;
+  recalculateProductionStats();
 
   updateUI();
   saveGame();
