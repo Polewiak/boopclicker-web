@@ -113,6 +113,15 @@ body {
   margin-bottom: 1.25rem;
 }
 
+.upgrade-empty {
+  margin: 0;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(245, 245, 245, 0.65);
+  font-style: italic;
+}
+
 .upgrade-card {
   border: 1px solid #333;
   border-radius: 0.8rem;
@@ -186,6 +195,44 @@ body {
   padding: 0;
   border-width: 0;
   overflow: hidden;
+}
+
+#prestige-section {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+#prestige-section h2 {
+  margin: 0 0 0.35rem;
+  letter-spacing: 0.5px;
+}
+
+#prestige-section p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+#prestige-section button {
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 0.8rem;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffe35b, #ff9b4d);
+  color: #2d1600;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+#prestige-section button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .footnote {
