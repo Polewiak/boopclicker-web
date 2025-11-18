@@ -1,20 +1,114 @@
-const STORAGE_KEY = 'boopclicker-save-v1';
+const STORAGE_KEY = 'boopclicker-save-v2';
 const SAVE_INTERVAL_SECONDS = 5;
+const BASE_BPC = 1;
+const BASE_BPS = 0;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
+
+const clickUpgradesConfig = [
+  {
+    id: 'soft_paw_tap',
+    name: 'Soft Paw Tap',
+    description: 'Delikatne trącenie łapką. +1 BPC na poziom.',
+    level: 0,
+    baseCost: 10,
+    currentCost: 10,
+    scale: 1.15,
+    bonusBpc: 1,
+    bonusBps: 0,
+  },
+  {
+    id: 'energetic_ear_flicker',
+    name: 'Energetic Ear Flicker',
+    description: 'Szybkie potrząśnięcie uszami dla +5 BPC na poziom.',
+    level: 0,
+    baseCost: 100,
+    currentCost: 100,
+    scale: 1.15,
+    bonusBpc: 5,
+    bonusBps: 0,
+  },
+  {
+    id: 'boy_bopper',
+    name: 'Boy Bopper',
+    description: 'Nieco silniejszy kumpel dodający +20 BPC na poziom.',
+    level: 0,
+    baseCost: 500,
+    currentCost: 500,
+    scale: 1.17,
+    bonusBpc: 20,
+    bonusBps: 0,
+  },
+  {
+    id: 'himbo_hooters',
+    name: 'Himbo Hooters',
+    description: 'Drużyna himbo zwiększa BPC o +80 na poziom.',
+    level: 0,
+    baseCost: 2000,
+    currentCost: 2000,
+    scale: 1.18,
+    bonusBpc: 80,
+    bonusBps: 0,
+  },
+];
+
+const autoUpgradesConfig = [
+  {
+    id: 'feral_toaster',
+    name: 'Feral Toaster',
+    description: 'Wypluwa pasywne boopy: +1 BPS na poziom.',
+    level: 0,
+    baseCost: 50,
+    currentCost: 50,
+    scale: 1.17,
+    bonusBpc: 0,
+    bonusBps: 1,
+  },
+  {
+    id: 'overworked_fox_intern',
+    name: 'Overworked Fox Intern',
+    description: 'Ambitny lis dodaje +8 BPS na poziom.',
+    level: 0,
+    baseCost: 300,
+    currentCost: 300,
+    scale: 1.18,
+    bonusBpc: 0,
+    bonusBps: 8,
+  },
+  {
+    id: 'wolfgirl_call_center',
+    name: 'Wolfgirl Call Center',
+    description: 'Całe call center produkuje +45 BPS na poziom.',
+    level: 0,
+    baseCost: 2000,
+    currentCost: 2000,
+    scale: 1.18,
+    bonusBpc: 0,
+    bonusBps: 45,
+  },
+  {
+    id: 'boomerang_otter_crew',
+    name: 'Boomerang Otter Crew',
+    description: 'Wydajne wydry przynoszą +250 BPS na poziom.',
+    level: 0,
+    baseCost: 12000,
+    currentCost: 12000,
+    scale: 1.19,
+    bonusBpc: 0,
+    bonusBps: 250,
+  },
+];
 
 const gameState = {
   boops: 0,
   totalBoops: 0,
-  bpc: 1,
-  bps: 0,
+  bpc: BASE_BPC,
+  bps: BASE_BPS,
   critChance: 0.03,
   critMultiplier: 7,
   lastCritValue: 0,
-  upgrades: {
-    bpc: { level: 0, baseCost: 10, cost: 10, scale: 1.15 },
-    bps: { level: 0, baseCost: 50, cost: 50, scale: 1.17 }
-  },
-  lastUpdate: Date.now()
+  upgradesClick: clickUpgradesConfig.map((upgrade) => ({ ...upgrade })),
+  upgradesAuto: autoUpgradesConfig.map((upgrade) => ({ ...upgrade })),
+  lastUpdate: Date.now(),
 };
 
 let intervalId = null;
@@ -29,19 +123,16 @@ const ui = {
   critChance: document.getElementById('critChance'),
   critMultiplier: document.getElementById('critMultiplier'),
   boopButton: document.getElementById('boopButton'),
-  bpcLevel: document.getElementById('bpcLevel'),
-  bpcCost: document.getElementById('bpcCost'),
-  bpsLevel: document.getElementById('bpsLevel'),
-  bpsCost: document.getElementById('bpsCost'),
-  bpcBuy: document.getElementById('bpcBuy'),
-  bpsBuy: document.getElementById('bpsBuy'),
   offlineNotice: document.getElementById('offlineNotice'),
-  critPopup: document.getElementById('crit-popup')
+  critPopup: document.getElementById('crit-popup'),
+  clickUpgradesContainer: document.getElementById('click-upgrades-container'),
+  autoUpgradesContainer: document.getElementById('auto-upgrades-container'),
 };
 
 function initGame() {
   loadGame();
   attachHandlers();
+  renderUpgrades();
   updateUI();
   if (intervalId) {
     clearInterval(intervalId);
@@ -51,8 +142,6 @@ function initGame() {
 
 function attachHandlers() {
   ui.boopButton.addEventListener('click', doBoop);
-  ui.bpcBuy.addEventListener('click', () => buyUpgrade('bpc'));
-  ui.bpsBuy.addEventListener('click', () => buyUpgrade('bps'));
   window.addEventListener('beforeunload', saveGame);
 }
 
@@ -65,29 +154,50 @@ function loadGame() {
 
   try {
     const data = JSON.parse(raw);
-    Object.assign(gameState, data, {
-      upgrades: {
-        bpc: { ...gameState.upgrades.bpc, ...data.upgrades?.bpc },
-        bps: { ...gameState.upgrades.bps, ...data.upgrades?.bps }
-      }
-    });
-
-    if (typeof gameState.critChance !== 'number') gameState.critChance = 0.03;
-    if (typeof gameState.critMultiplier !== 'number') gameState.critMultiplier = 7;
-    if (typeof gameState.lastCritValue !== 'number') gameState.lastCritValue = 0;
+    gameState.boops = typeof data.boops === 'number' ? data.boops : gameState.boops;
+    gameState.totalBoops = typeof data.totalBoops === 'number' ? data.totalBoops : gameState.totalBoops;
+    gameState.critChance = typeof data.critChance === 'number' ? data.critChance : gameState.critChance;
+    gameState.critMultiplier = typeof data.critMultiplier === 'number' ? data.critMultiplier : gameState.critMultiplier;
+    gameState.lastCritValue = typeof data.lastCritValue === 'number' ? data.lastCritValue : 0;
+    gameState.lastUpdate = typeof data.lastUpdate === 'number' ? data.lastUpdate : Date.now();
+    gameState.upgradesClick = restoreUpgradeList(data.upgradesClick, clickUpgradesConfig);
+    gameState.upgradesAuto = restoreUpgradeList(data.upgradesAuto, autoUpgradesConfig);
   } catch (error) {
     console.warn('Nie udało się wczytać zapisu', error);
   }
 
+  recalculateProductionStats();
   applyOfflineProgress();
 }
 
 function saveGame() {
   const payload = {
     ...gameState,
-    lastUpdate: Date.now()
+    lastUpdate: Date.now(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function restoreUpgradeList(savedList, defaults) {
+  return defaults.map((upgrade) => {
+    const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === upgrade.id) : null;
+    return {
+      ...upgrade,
+      level: saved?.level ?? upgrade.level,
+      currentCost: saved?.currentCost ?? upgrade.currentCost ?? upgrade.baseCost,
+    };
+  });
+}
+
+function recalculateProductionStats() {
+  gameState.bpc = BASE_BPC;
+  gameState.bps = BASE_BPS;
+  gameState.upgradesClick.forEach((upgrade) => {
+    gameState.bpc += upgrade.level * (upgrade.bonusBpc || 0);
+  });
+  gameState.upgradesAuto.forEach((upgrade) => {
+    gameState.bps += upgrade.level * (upgrade.bonusBps || 0);
+  });
 }
 
 function applyOfflineProgress() {
@@ -113,13 +223,56 @@ function updateUI() {
     ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
   }
 
-  ui.bpcLevel.textContent = gameState.upgrades.bpc.level;
-  ui.bpcCost.textContent = numberFormatter.format(gameState.upgrades.bpc.cost);
-  ui.bpsLevel.textContent = gameState.upgrades.bps.level;
-  ui.bpsCost.textContent = numberFormatter.format(gameState.upgrades.bps.cost);
+  renderUpgrades();
+}
 
-  toggleBuyButton(ui.bpcBuy, gameState.boops >= gameState.upgrades.bpc.cost);
-  toggleBuyButton(ui.bpsBuy, gameState.boops >= gameState.upgrades.bps.cost);
+function renderUpgrades() {
+  renderUpgradeList(gameState.upgradesClick, ui.clickUpgradesContainer, 'click');
+  renderUpgradeList(gameState.upgradesAuto, ui.autoUpgradesContainer, 'auto');
+}
+
+function renderUpgradeList(list, container, type) {
+  if (!container) return;
+  container.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  list.forEach((upgrade) => {
+    const card = document.createElement('article');
+    card.className = 'upgrade-card';
+
+    const title = document.createElement('h3');
+    title.textContent = upgrade.name;
+
+    const description = document.createElement('p');
+    description.textContent = upgrade.description;
+
+    const level = document.createElement('p');
+    level.innerHTML = `Poziom: <strong>${upgrade.level}</strong>`;
+
+    const cost = document.createElement('p');
+    cost.innerHTML = `Koszt: <strong>${numberFormatter.format(Math.ceil(upgrade.currentCost))}</strong> boops`;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'buy-button';
+    button.textContent = 'Buy';
+    const canAfford = gameState.boops >= upgrade.currentCost;
+    button.disabled = !canAfford;
+    button.classList.toggle('disabled', !canAfford);
+    button.classList.toggle('is-affordable', canAfford);
+    button.addEventListener('click', () => {
+      if (type === 'click') {
+        buyClickUpgrade(upgrade.id);
+      } else {
+        buyAutoUpgrade(upgrade.id);
+      }
+    });
+
+    card.append(title, description, level, cost, button);
+    fragment.appendChild(card);
+  });
+
+  container.appendChild(fragment);
 }
 
 function doBoop() {
@@ -138,21 +291,28 @@ function doBoop() {
   saveGame();
 }
 
-function buyUpgrade(type) {
-  const upgrade = gameState.upgrades[type];
-  if (!upgrade) return;
-  if (gameState.boops < upgrade.cost) return;
+function buyClickUpgrade(id) {
+  const upgrade = gameState.upgradesClick.find((item) => item.id === id);
+  if (!upgrade || gameState.boops < upgrade.currentCost) return;
 
-  gameState.boops -= upgrade.cost;
+  gameState.boops -= upgrade.currentCost;
   upgrade.level += 1;
+  gameState.bpc += upgrade.bonusBpc;
+  upgrade.currentCost = Math.ceil(upgrade.currentCost * upgrade.scale);
 
-  if (type === 'bpc') {
-    gameState.bpc += 1;
-  } else if (type === 'bps') {
-    gameState.bps += 1;
-  }
+  updateUI();
+  saveGame();
+}
 
-  upgrade.cost = Math.ceil(upgrade.cost * upgrade.scale);
+function buyAutoUpgrade(id) {
+  const upgrade = gameState.upgradesAuto.find((item) => item.id === id);
+  if (!upgrade || gameState.boops < upgrade.currentCost) return;
+
+  gameState.boops -= upgrade.currentCost;
+  upgrade.level += 1;
+  gameState.bps += upgrade.bonusBps;
+  upgrade.currentCost = Math.ceil(upgrade.currentCost * upgrade.scale);
+
   updateUI();
   saveGame();
 }
@@ -177,12 +337,6 @@ function addBoops(amount) {
   if (!Number.isFinite(amount) || amount <= 0) return;
   gameState.boops += amount;
   gameState.totalBoops += amount;
-}
-
-function toggleBuyButton(button, canAfford) {
-  if (!button) return;
-  button.disabled = !canAfford;
-  button.classList.toggle('is-affordable', canAfford);
 }
 
 function announceOfflineGain(gain, seconds) {
