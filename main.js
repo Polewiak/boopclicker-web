@@ -137,24 +137,46 @@ const factionConfig = [
   },
 ];
 
-const achievementsConfig = [
+const achievements = [
   {
-    id: 'first_prestige',
-    name: 'First Prestige',
-    description: 'Perform your first Prestige.',
-    unlocked: false,
+    id: 'boop_100',
+    name: 'Softpaw Starter',
+    desc: 'Kliknij 100 razy.',
+    rarity: 'common',
+    condition: (state) => state.totalBoops >= 100,
+    reward: { type: 'bpc_mult', value: 1.01 },
   },
   {
-    id: 'million_boops',
-    name: 'One in a Million',
-    description: 'Reach 1,000,000 total boops.',
-    unlocked: false,
+    id: 'boop_1000',
+    name: 'Boop Apprentice',
+    desc: 'Kliknij 1 000 razy.',
+    rarity: 'rare',
+    condition: (state) => state.totalBoops >= 1000,
+    reward: { type: 'bpc_mult', value: 1.03 },
   },
   {
-    id: 'crit_master',
-    name: 'Crit Master',
-    description: 'Get 100 Critical Boops.',
-    unlocked: false,
+    id: 'crit_50',
+    name: 'Critical Thinker',
+    desc: 'Wylosuj 50 CRITów.',
+    rarity: 'common',
+    condition: (state) => state.totalCrits >= 50,
+    reward: { type: 'bps_mult', value: 1.01 },
+  },
+  {
+    id: 'auto_25',
+    name: 'Factory Fur',
+    desc: 'Kup 25 auto-booperów łącznie.',
+    rarity: 'rare',
+    condition: (state) => state.totalAutoBoopers >= 25,
+    reward: { type: 'bpc_add', value: 5 },
+  },
+  {
+    id: 'prestige_1',
+    name: 'Ascended Paw',
+    desc: 'Wykonaj 1 Prestige.',
+    rarity: 'epic',
+    condition: (state) => state.totalPrestiges >= 1,
+    reward: { type: 'unlock_skin', skinId: 'pink_glow' },
   },
 ];
 
@@ -169,7 +191,6 @@ const gameState = {
   bpcUpgrades: bpcUpgradesConfig.map((upgrade) => ({ ...upgrade })),
   autoBoopers: autoBoopersConfig.map((booper) => ({ ...booper })),
   metaPerks: metaPerksConfig.map((perk) => ({ ...perk })),
-  achievements: achievementsConfig.map((achievement) => ({ ...achievement })),
   factions: factionConfig.map((faction) => ({ ...faction })),
   currentFaction: null,
   factionBonus: { crit: 0, bps: 0, bpc: 0 },
@@ -177,13 +198,15 @@ const gameState = {
   globalMultiplier: 1,
   bpcMultiplier: 1,
   bpsMultiplier: 1,
+  bpcFlatBonus: 0,
   offlineEfficiency: BASE_OFFLINE_EFFICIENCY,
   prestigeThreshold: PRESTIGE_THRESHOLD,
-  stats: {
-    totalClicks: 0,
-    totalCrits: 0,
-    totalPrestiges: 0,
-  },
+  achievementsUnlocked: [],
+  unlockedSkins: [],
+  totalClicks: 0,
+  totalCrits: 0,
+  totalPrestiges: 0,
+  totalAutoBoopers: 0,
   lastUpdate: Date.now(),
 };
 
@@ -220,7 +243,8 @@ const ui = {
   statsTotalClicks: document.getElementById('stats-total-clicks'),
   statsTotalCrits: document.getElementById('stats-total-crits'),
   statsTotalPrestiges: document.getElementById('stats-total-prestiges'),
-  achievementsContainer: document.getElementById('achievements-container'),
+  achievementsGrid: document.getElementById('achievements-grid'),
+  achievementToast: document.getElementById('achievement-toast'),
   debugAddBoopsButton: document.getElementById('debug-add-boops'),
   debugResetButton: document.getElementById('debug-reset'),
 };
@@ -347,6 +371,10 @@ function openModal(targetId) {
   }
 
   hideStoreTooltip();
+  if (targetId === 'stats-modal') {
+    updateStatsUI();
+    updateAchievementsUI();
+  }
   target.classList.remove('hidden');
   modalControls.overlay.classList.remove('hidden');
 }
@@ -409,8 +437,28 @@ function loadGame() {
     gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
     gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
     gameState.metaPerks = restoreMetaPerks(data.metaPerks);
-    gameState.achievements = restoreAchievements(data.achievements);
-    gameState.stats = restoreStats(data.stats);
+    gameState.achievementsUnlocked = Array.isArray(data.achievementsUnlocked)
+      ? Array.from(new Set(data.achievementsUnlocked))
+      : [];
+    if (gameState.achievementsUnlocked.length === 0 && Array.isArray(data.achievements)) {
+      gameState.achievementsUnlocked = data.achievements
+        .filter((item) => item?.unlocked)
+        .map((item) => item.id);
+    }
+    gameState.unlockedSkins = Array.isArray(data.unlockedSkins)
+      ? Array.from(new Set(data.unlockedSkins))
+      : [];
+    gameState.bpcFlatBonus = typeof data.bpcFlatBonus === 'number' ? data.bpcFlatBonus : 0;
+    gameState.totalClicks = Number(data.totalClicks) || 0;
+    gameState.totalCrits = Number(data.totalCrits) || 0;
+    gameState.totalPrestiges = Number(data.totalPrestiges) || 0;
+    gameState.totalAutoBoopers = Number(data.totalAutoBoopers) || 0;
+    if (data.totalAutoBoopers == null) {
+      gameState.totalAutoBoopers = gameState.autoBoopers.reduce(
+        (sum, booper) => sum + (booper.level || 0),
+        0
+      );
+    }
     const savedFactionId = typeof data.currentFaction === 'string' ? data.currentFaction : null;
     const factionExists = savedFactionId
       ? gameState.factions.some((faction) => faction.id === savedFactionId)
@@ -445,16 +493,21 @@ function saveGame() {
     bpcUpgrades: gameState.bpcUpgrades,
     autoBoopers: gameState.autoBoopers,
     metaPerks: gameState.metaPerks,
-    achievements: gameState.achievements,
+    achievementsUnlocked: gameState.achievementsUnlocked,
+    unlockedSkins: gameState.unlockedSkins,
     currentFaction: gameState.currentFaction,
     factionBonus: gameState.factionBonus,
     boopEssence: gameState.boopEssence,
     globalMultiplier: gameState.globalMultiplier,
     bpcMultiplier: gameState.bpcMultiplier,
     bpsMultiplier: gameState.bpsMultiplier,
+    bpcFlatBonus: gameState.bpcFlatBonus,
     offlineEfficiency: gameState.offlineEfficiency,
     prestigeThreshold: gameState.prestigeThreshold,
-    stats: gameState.stats,
+    totalClicks: gameState.totalClicks,
+    totalCrits: gameState.totalCrits,
+    totalPrestiges: gameState.totalPrestiges,
+    totalAutoBoopers: gameState.totalAutoBoopers,
     lastUpdate: gameState.lastUpdate || Date.now(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -491,26 +544,6 @@ function restoreMetaPerks(savedList) {
   });
 }
 
-function restoreStats(savedStats) {
-  return {
-    totalClicks: Number(savedStats?.totalClicks) || 0,
-    totalCrits: Number(savedStats?.totalCrits) || 0,
-    totalPrestiges: Number(savedStats?.totalPrestiges) || 0,
-  };
-}
-
-function restoreAchievements(savedList) {
-  return achievementsConfig.map((achievement) => {
-    const saved = Array.isArray(savedList)
-      ? savedList.find((item) => item.id === achievement.id)
-      : null;
-    return {
-      ...achievement,
-      unlocked: saved?.unlocked ?? false,
-    };
-  });
-}
-
 function recalculateProductionStats() {
   let baseBpc = BASE_BPC;
   let baseBps = BASE_BPS;
@@ -529,20 +562,23 @@ function recalculateProductionStats() {
 
   gameState.bpc = baseBpc;
   gameState.bps = baseBps;
-  applyAllMetaPerks();
+  rebuildPermanentBonuses();
 }
 
-function applyAllMetaPerks() {
+function rebuildPermanentBonuses() {
   gameState.bpcMultiplier = 1;
   gameState.bpsMultiplier = 1;
   gameState.offlineEfficiency = BASE_OFFLINE_EFFICIENCY;
   gameState.critChance = BASE_CRIT_CHANCE;
+  gameState.bpcFlatBonus = 0;
 
   gameState.metaPerks.forEach((perk) => {
     if (perk.purchased) {
       applyMetaPerkEffect(perk);
     }
   });
+
+  applyAchievementRewardsFromState();
 }
 
 function applyMetaPerkEffect(perk) {
@@ -558,6 +594,46 @@ function applyMetaPerkEffect(perk) {
       break;
     case 'offline_mastery':
       gameState.offlineEfficiency += 0.25;
+      break;
+    default:
+      break;
+  }
+}
+
+function applyAchievementRewardsFromState() {
+  if (!Array.isArray(gameState.achievementsUnlocked)) {
+    gameState.achievementsUnlocked = [];
+  }
+  const unlockedSet = new Set(gameState.achievementsUnlocked);
+  achievements.forEach((achievement) => {
+    if (unlockedSet.has(achievement.id)) {
+      applyAchievementReward(achievement);
+    }
+  });
+}
+
+function applyAchievementReward(achievement) {
+  const reward = achievement.reward;
+  if (!reward) {
+    return;
+  }
+  switch (reward.type) {
+    case 'bpc_mult':
+      gameState.bpcMultiplier *= reward.value;
+      break;
+    case 'bps_mult':
+      gameState.bpsMultiplier *= reward.value;
+      break;
+    case 'bpc_add':
+      gameState.bpcFlatBonus += reward.value;
+      break;
+    case 'unlock_skin':
+      if (!Array.isArray(gameState.unlockedSkins)) {
+        gameState.unlockedSkins = [];
+      }
+      if (!gameState.unlockedSkins.includes(reward.skinId)) {
+        gameState.unlockedSkins.push(reward.skinId);
+      }
       break;
     default:
       break;
@@ -587,8 +663,9 @@ function chooseFaction(id) {
 }
 
 function getFinalBpc() {
+  const baseWithFlat = gameState.bpc + (gameState.bpcFlatBonus || 0);
   return (
-    gameState.bpc *
+    baseWithFlat *
     gameState.bpcMultiplier *
     gameState.globalMultiplier *
     (1 + gameState.factionBonus.bpc)
@@ -664,7 +741,7 @@ function updateUI() {
   renderMetaPerks();
   renderFactions();
   updateStatsUI();
-  renderAchievements();
+  updateAchievementsUI();
 }
 
 function updatePrestigeUI() {
@@ -958,40 +1035,36 @@ function renderFactions() {
 
 function updateStatsUI() {
   if (ui.statsTotalClicks) {
-    ui.statsTotalClicks.textContent = numberFormatter.format(gameState.stats.totalClicks);
+    ui.statsTotalClicks.textContent = numberFormatter.format(gameState.totalClicks);
   }
   if (ui.statsTotalCrits) {
-    ui.statsTotalCrits.textContent = numberFormatter.format(gameState.stats.totalCrits);
+    ui.statsTotalCrits.textContent = numberFormatter.format(gameState.totalCrits);
   }
   if (ui.statsTotalPrestiges) {
-    ui.statsTotalPrestiges.textContent = numberFormatter.format(gameState.stats.totalPrestiges);
+    ui.statsTotalPrestiges.textContent = numberFormatter.format(gameState.totalPrestiges);
   }
 }
 
-function renderAchievements() {
-  const container = ui.achievementsContainer;
+function updateAchievementsUI() {
+  const container = ui.achievementsGrid;
   if (!container) return;
   container.innerHTML = '';
 
   const fragment = document.createDocumentFragment();
-  gameState.achievements.forEach((achievement) => {
-    const card = document.createElement('article');
+  const unlockedSet = new Set(gameState.achievementsUnlocked);
+
+  achievements.forEach((achievement) => {
+    const card = document.createElement('div');
     card.className = 'achievement-card';
-    if (achievement.unlocked) {
+    if (unlockedSet.has(achievement.id)) {
       card.classList.add('unlocked');
     }
 
-    const title = document.createElement('h3');
-    title.textContent = achievement.name;
-
-    const description = document.createElement('p');
-    description.textContent = achievement.description;
-
-    const status = document.createElement('p');
-    status.textContent = achievement.unlocked ? 'Odblokowane' : 'Zablokowane';
-    status.style.opacity = 0.8;
-
-    card.append(title, description, status);
+    card.innerHTML = `
+      <div class="achievement-name">${achievement.name}</div>
+      <div class="achievement-desc">${achievement.desc}</div>
+      <div class="achievement-rarity">${achievement.rarity.toUpperCase()}</div>
+    `;
     fragment.appendChild(card);
   });
 
@@ -999,38 +1072,41 @@ function renderAchievements() {
 }
 
 function checkAchievements() {
-  let unlockedAny = false;
-  gameState.achievements.forEach((achievement) => {
-    if (achievement.unlocked) {
+  if (!Array.isArray(gameState.achievementsUnlocked)) {
+    gameState.achievementsUnlocked = [];
+  }
+  const unlockedSet = new Set(gameState.achievementsUnlocked);
+  achievements.forEach((achievement) => {
+    if (unlockedSet.has(achievement.id)) {
       return;
     }
-    switch (achievement.id) {
-      case 'first_prestige':
-        if (gameState.stats.totalPrestiges >= 1) {
-          achievement.unlocked = true;
-          unlockedAny = true;
-        }
-        break;
-      case 'million_boops':
-        if (gameState.totalBoops >= 1_000_000) {
-          achievement.unlocked = true;
-          unlockedAny = true;
-        }
-        break;
-      case 'crit_master':
-        if (gameState.stats.totalCrits >= 100) {
-          achievement.unlocked = true;
-          unlockedAny = true;
-        }
-        break;
-      default:
-        break;
+    if (achievement.condition(gameState)) {
+      unlockAchievement(achievement);
     }
   });
+}
 
-  if (unlockedAny) {
-    saveGame();
+function unlockAchievement(achievement) {
+  if (gameState.achievementsUnlocked.includes(achievement.id)) {
+    return;
   }
+  gameState.achievementsUnlocked.push(achievement.id);
+  rebuildPermanentBonuses();
+  showAchievementPopup(achievement);
+  saveGame();
+  updateAchievementsUI();
+}
+
+function showAchievementPopup(achievement) {
+  const toast = ui.achievementToast;
+  if (!toast) return;
+  toast.textContent = `Achievement unlocked: ${achievement.name}!`;
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2500);
 }
 
 function doBoop() {
@@ -1038,11 +1114,11 @@ function doBoop() {
   const isCrit = Math.random() < getEffectiveCritChance();
   let gain = baseGain;
 
-  gameState.stats.totalClicks += 1;
+  gameState.totalClicks += 1;
 
   if (isCrit) {
     gain *= gameState.critMultiplier;
-    gameState.stats.totalCrits += 1;
+    gameState.totalCrits += 1;
   }
 
   const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
@@ -1069,6 +1145,7 @@ function buyBpcUpgrade(id) {
   upgrade.purchased = true;
   recalculateProductionStats();
   markStoreDirty();
+  checkAchievements();
 
   updateUI();
   flashStoreRow(upgrade.id);
@@ -1085,8 +1162,10 @@ function buyAutoBooper(id) {
   gameState.boops -= booper.currentCost;
   booper.level += 1;
   booper.currentCost = Math.ceil(booper.currentCost * booper.scale);
+  gameState.totalAutoBoopers += 1;
   recalculateProductionStats();
   markStoreDirty();
+  checkAchievements();
 
   updateUI();
   flashStoreRow(booper.id);
@@ -1102,7 +1181,7 @@ function buyMetaPerk(id) {
 
   gameState.boopEssence -= perk.cost;
   perk.purchased = true;
-  applyMetaPerkEffect(perk);
+  rebuildPermanentBonuses();
   updateGlobalMultiplier();
 
   updateUI();
@@ -1139,8 +1218,13 @@ function hardResetGame() {
   gameState.bpcUpgrades = bpcUpgradesConfig.map((upgrade) => ({ ...upgrade }));
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.metaPerks = metaPerksConfig.map((perk) => ({ ...perk }));
-  gameState.achievements = achievementsConfig.map((achievement) => ({ ...achievement }));
-  gameState.stats = { totalClicks: 0, totalCrits: 0, totalPrestiges: 0 };
+  gameState.achievementsUnlocked = [];
+  gameState.unlockedSkins = [];
+  gameState.totalClicks = 0;
+  gameState.totalCrits = 0;
+  gameState.totalPrestiges = 0;
+  gameState.totalAutoBoopers = 0;
+  gameState.bpcFlatBonus = 0;
   gameState.currentFaction = null;
   gameState.factionBonus = { crit: 0, bps: 0, bpc: 0 };
   passiveGainRemainder = 0;
@@ -1273,7 +1357,7 @@ function doPrestige() {
 
   gameState.boopEssence += gain;
   updateGlobalMultiplier();
-  gameState.stats.totalPrestiges += 1;
+  gameState.totalPrestiges += 1;
   checkAchievements();
   resetProgressForPrestige();
   recalculateProductionStats();

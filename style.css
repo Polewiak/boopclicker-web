@@ -499,11 +499,16 @@ button {
 }
 
 #meta-perks-container,
-#faction-choice-container,
-#achievements-container {
+#faction-choice-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+#achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 .meta-perk-card {
@@ -562,15 +567,57 @@ button {
 }
 
 .achievement-card {
+  background: #1c1c1c;
   border: 1px solid #333;
-  border-radius: 6px;
-  padding: 8px;
-  background: #1f1f1f;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  opacity: 0.4;
+  transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .achievement-card.unlocked {
-  border-color: #6bff7a;
-  box-shadow: 0 0 8px rgba(107, 255, 122, 0.3);
+  opacity: 1;
+  border-color: #ff69b4;
+  box-shadow: 0 0 10px rgba(255, 105, 180, 0.35);
+}
+
+.achievement-name {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.achievement-desc {
+  font-size: 0.85rem;
+  margin: 0 0 6px;
+  color: #d1d1d1;
+}
+
+.achievement-rarity {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+#achievement-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid #444;
+  color: #fff;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1200;
+}
+
+#achievement-toast.show {
+  opacity: 1;
 }
 
 .footnote {
