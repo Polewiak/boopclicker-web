@@ -108,6 +108,30 @@ const metaPerksConfig = [
   },
 ];
 
+const factionConfig = [
+  {
+    id: 'fox',
+    name: 'Fox Clan',
+    description: '+5% Critical Chance.',
+    bonusType: 'crit',
+    bonusValue: 0.05,
+  },
+  {
+    id: 'wolf',
+    name: 'Wolf Pack',
+    description: '+5% BPS.',
+    bonusType: 'bps',
+    bonusValue: 0.05,
+  },
+  {
+    id: 'dragon',
+    name: 'Dragon Brood',
+    description: '+5% BPC.',
+    bonusType: 'bpc',
+    bonusValue: 0.05,
+  },
+];
+
 const gameState = {
   boops: 0,
   totalBoops: 0,
@@ -119,6 +143,9 @@ const gameState = {
   bpcUpgrades: bpcUpgradesConfig.map((upgrade) => ({ ...upgrade })),
   autoBoopers: autoBoopersConfig.map((booper) => ({ ...booper })),
   metaPerks: metaPerksConfig.map((perk) => ({ ...perk })),
+  factions: factionConfig.map((faction) => ({ ...faction })),
+  currentFaction: null,
+  factionBonus: { crit: 0, bps: 0, bpc: 0 },
   boopEssence: 0,
   globalMultiplier: 1,
   bpcMultiplier: 1,
@@ -146,6 +173,8 @@ const ui = {
   autoUpgradesContainer: document.getElementById('auto-upgrades-container'),
   metaPerksContainer: document.getElementById('meta-perks-container'),
   metaBeValue: document.getElementById('meta-be-value'),
+  factionCurrent: document.getElementById('faction-current'),
+  factionChoiceContainer: document.getElementById('faction-choice-container'),
   prestigeTotalBoops: document.getElementById('total-boops-value'),
   boopEssence: document.getElementById('boop-essence-value'),
   prestigeGain: document.getElementById('prestige-gain-value'),
@@ -196,6 +225,18 @@ function loadGame() {
     gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
     gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
     gameState.metaPerks = restoreMetaPerks(data.metaPerks);
+    const savedFactionId = typeof data.currentFaction === 'string' ? data.currentFaction : null;
+    const factionExists = savedFactionId
+      ? gameState.factions.some((faction) => faction.id === savedFactionId)
+      : false;
+    applyFactionBonusById(savedFactionId);
+    if ((!savedFactionId || !factionExists) && typeof data.factionBonus === 'object') {
+      gameState.factionBonus = {
+        crit: Number(data.factionBonus.crit) || 0,
+        bps: Number(data.factionBonus.bps) || 0,
+        bpc: Number(data.factionBonus.bpc) || 0,
+      };
+    }
   } catch (error) {
     console.warn('Nie udało się wczytać zapisu', error);
   }
@@ -216,6 +257,8 @@ function saveGame() {
     bpcUpgrades: gameState.bpcUpgrades,
     autoBoopers: gameState.autoBoopers,
     metaPerks: gameState.metaPerks,
+    currentFaction: gameState.currentFaction,
+    factionBonus: gameState.factionBonus,
     boopEssence: gameState.boopEssence,
     globalMultiplier: gameState.globalMultiplier,
     bpcMultiplier: gameState.bpcMultiplier,
@@ -311,18 +354,54 @@ function applyMetaPerkEffect(perk) {
   }
 }
 
+function applyFactionBonusById(factionId) {
+  const faction = gameState.factions.find((item) => item.id === factionId) || null;
+  gameState.currentFaction = faction ? faction.id : null;
+  gameState.factionBonus = { crit: 0, bps: 0, bpc: 0 };
+  if (faction) {
+    gameState.factionBonus[faction.bonusType] = faction.bonusValue;
+  }
+}
+
+function canChangeFaction() {
+  return Math.floor(gameState.boops) === 0;
+}
+
+function chooseFaction(id) {
+  if (!canChangeFaction()) {
+    return;
+  }
+  applyFactionBonusById(id);
+  saveGame();
+  updateUI();
+}
+
 function getFinalBpc() {
-  return gameState.bpc * gameState.bpcMultiplier;
+  return (
+    gameState.bpc *
+    gameState.bpcMultiplier *
+    gameState.globalMultiplier *
+    (1 + gameState.factionBonus.bpc)
+  );
 }
 
 function getFinalBps() {
-  return gameState.bps * gameState.bpsMultiplier;
+  return (
+    gameState.bps *
+    gameState.bpsMultiplier *
+    gameState.globalMultiplier *
+    (1 + gameState.factionBonus.bps)
+  );
+}
+
+function getEffectiveCritChance() {
+  return Math.min(0.95, Math.max(0, gameState.critChance + gameState.factionBonus.crit));
 }
 
 function applyOfflineProgress() {
   const now = Date.now();
   const secondsPassed = Math.floor((now - (gameState.lastUpdate || now)) / 1000);
-  const passiveRate = gameState.bps * gameState.bpsMultiplier * gameState.globalMultiplier;
+  const passiveRate = getFinalBps();
   if (secondsPassed > 0 && passiveRate > 0) {
     const baseGain = secondsPassed * passiveRate * gameState.offlineEfficiency;
     const actualGain = addBoops(Math.floor(baseGain));
@@ -340,7 +419,7 @@ function updateUI() {
   ui.bps.textContent = numberFormatter.format(Math.round(finalBps * 100) / 100);
 
   if (ui.critChance) {
-    ui.critChance.textContent = formatCritChance(gameState.critChance);
+    ui.critChance.textContent = formatCritChance(getEffectiveCritChance());
   }
   if (ui.critMultiplier) {
     ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
@@ -353,6 +432,7 @@ function updateUI() {
   renderUpgrades();
   updatePrestigeUI();
   renderMetaPerks();
+  renderFactions();
 }
 
 function updatePrestigeUI() {
@@ -513,16 +593,44 @@ function renderMetaPerks() {
   container.appendChild(fragment);
 }
 
+function renderFactions() {
+  const currentEl = ui.factionCurrent;
+  const container = ui.factionChoiceContainer;
+  if (!currentEl || !container) return;
+
+  const activeFaction = gameState.factions.find((item) => item.id === gameState.currentFaction);
+  currentEl.textContent = activeFaction
+    ? `${activeFaction.name} — ${activeFaction.description}`
+    : 'Brak wybranego totemu.';
+
+  container.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  const canPick = canChangeFaction();
+
+  gameState.factions.forEach((faction) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = `${faction.name} – ${faction.description}`;
+    button.disabled = !canPick;
+    if (faction.id === gameState.currentFaction) {
+      button.classList.add('selected');
+    }
+    button.addEventListener('click', () => chooseFaction(faction.id));
+    fragment.appendChild(button);
+  });
+
+  container.appendChild(fragment);
+}
+
 function doBoop() {
-  const baseGain = gameState.bpc * gameState.bpcMultiplier;
-  const isCrit = Math.random() < gameState.critChance;
+  const baseGain = getFinalBpc();
+  const isCrit = Math.random() < getEffectiveCritChance();
   let gain = baseGain;
 
   if (isCrit) {
     gain *= gameState.critMultiplier;
   }
 
-  gain *= gameState.globalMultiplier;
   const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
 
   if (isCrit) {
@@ -582,7 +690,7 @@ function gameLoop() {
   const now = Date.now();
   const elapsedSeconds = Math.floor((now - gameState.lastUpdate) / 1000);
   const secondsToApply = Math.max(1, elapsedSeconds);
-  const passiveGainPerSecond = gameState.bps * gameState.bpsMultiplier * gameState.globalMultiplier;
+  const passiveGainPerSecond = getFinalBps();
   if (passiveGainPerSecond > 0) {
     const gain = Math.floor(secondsToApply * passiveGainPerSecond);
     addBoops(gain);
@@ -680,6 +788,7 @@ function resetProgressForPrestige() {
   gameState.bpcUpgrades = bpcUpgradesConfig.map((upgrade) => ({ ...upgrade }));
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.lastUpdate = Date.now();
+  applyFactionBonusById(gameState.currentFaction);
   // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
 }
 
