@@ -132,6 +132,27 @@ const factionConfig = [
   },
 ];
 
+const achievementsConfig = [
+  {
+    id: 'first_prestige',
+    name: 'First Prestige',
+    description: 'Perform your first Prestige.',
+    unlocked: false,
+  },
+  {
+    id: 'million_boops',
+    name: 'One in a Million',
+    description: 'Reach 1,000,000 total boops.',
+    unlocked: false,
+  },
+  {
+    id: 'crit_master',
+    name: 'Crit Master',
+    description: 'Get 100 Critical Boops.',
+    unlocked: false,
+  },
+];
+
 const gameState = {
   boops: 0,
   totalBoops: 0,
@@ -143,6 +164,7 @@ const gameState = {
   bpcUpgrades: bpcUpgradesConfig.map((upgrade) => ({ ...upgrade })),
   autoBoopers: autoBoopersConfig.map((booper) => ({ ...booper })),
   metaPerks: metaPerksConfig.map((perk) => ({ ...perk })),
+  achievements: achievementsConfig.map((achievement) => ({ ...achievement })),
   factions: factionConfig.map((faction) => ({ ...faction })),
   currentFaction: null,
   factionBonus: { crit: 0, bps: 0, bpc: 0 },
@@ -152,6 +174,11 @@ const gameState = {
   bpsMultiplier: 1,
   offlineEfficiency: BASE_OFFLINE_EFFICIENCY,
   prestigeThreshold: PRESTIGE_THRESHOLD,
+  stats: {
+    totalClicks: 0,
+    totalCrits: 0,
+    totalPrestiges: 0,
+  },
   lastUpdate: Date.now(),
 };
 
@@ -180,6 +207,10 @@ const ui = {
   prestigeGain: document.getElementById('prestige-gain-value'),
   globalMultiplier: document.getElementById('global-multiplier-value'),
   prestigeButton: document.getElementById('prestige-button'),
+  statsTotalClicks: document.getElementById('stats-total-clicks'),
+  statsTotalCrits: document.getElementById('stats-total-crits'),
+  statsTotalPrestiges: document.getElementById('stats-total-prestiges'),
+  achievementsContainer: document.getElementById('achievements-container'),
 };
 
 function initGame() {
@@ -225,6 +256,8 @@ function loadGame() {
     gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
     gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
     gameState.metaPerks = restoreMetaPerks(data.metaPerks);
+    gameState.achievements = restoreAchievements(data.achievements);
+    gameState.stats = restoreStats(data.stats);
     const savedFactionId = typeof data.currentFaction === 'string' ? data.currentFaction : null;
     const factionExists = savedFactionId
       ? gameState.factions.some((faction) => faction.id === savedFactionId)
@@ -243,6 +276,7 @@ function loadGame() {
 
   recalculateProductionStats();
   applyOfflineProgress();
+  checkAchievements();
 }
 
 function saveGame() {
@@ -257,6 +291,7 @@ function saveGame() {
     bpcUpgrades: gameState.bpcUpgrades,
     autoBoopers: gameState.autoBoopers,
     metaPerks: gameState.metaPerks,
+    achievements: gameState.achievements,
     currentFaction: gameState.currentFaction,
     factionBonus: gameState.factionBonus,
     boopEssence: gameState.boopEssence,
@@ -265,6 +300,7 @@ function saveGame() {
     bpsMultiplier: gameState.bpsMultiplier,
     offlineEfficiency: gameState.offlineEfficiency,
     prestigeThreshold: gameState.prestigeThreshold,
+    stats: gameState.stats,
     lastUpdate: Date.now(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -297,6 +333,26 @@ function restoreMetaPerks(savedList) {
     return {
       ...perk,
       purchased: saved?.purchased ?? false,
+    };
+  });
+}
+
+function restoreStats(savedStats) {
+  return {
+    totalClicks: Number(savedStats?.totalClicks) || 0,
+    totalCrits: Number(savedStats?.totalCrits) || 0,
+    totalPrestiges: Number(savedStats?.totalPrestiges) || 0,
+  };
+}
+
+function restoreAchievements(savedList) {
+  return achievementsConfig.map((achievement) => {
+    const saved = Array.isArray(savedList)
+      ? savedList.find((item) => item.id === achievement.id)
+      : null;
+    return {
+      ...achievement,
+      unlocked: saved?.unlocked ?? false,
     };
   });
 }
@@ -433,6 +489,8 @@ function updateUI() {
   updatePrestigeUI();
   renderMetaPerks();
   renderFactions();
+  updateStatsUI();
+  renderAchievements();
 }
 
 function updatePrestigeUI() {
@@ -622,13 +680,93 @@ function renderFactions() {
   container.appendChild(fragment);
 }
 
+function updateStatsUI() {
+  if (ui.statsTotalClicks) {
+    ui.statsTotalClicks.textContent = numberFormatter.format(gameState.stats.totalClicks);
+  }
+  if (ui.statsTotalCrits) {
+    ui.statsTotalCrits.textContent = numberFormatter.format(gameState.stats.totalCrits);
+  }
+  if (ui.statsTotalPrestiges) {
+    ui.statsTotalPrestiges.textContent = numberFormatter.format(gameState.stats.totalPrestiges);
+  }
+}
+
+function renderAchievements() {
+  const container = ui.achievementsContainer;
+  if (!container) return;
+  container.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
+  gameState.achievements.forEach((achievement) => {
+    const card = document.createElement('article');
+    card.className = 'achievement-card';
+    if (achievement.unlocked) {
+      card.classList.add('unlocked');
+    }
+
+    const title = document.createElement('h3');
+    title.textContent = achievement.name;
+
+    const description = document.createElement('p');
+    description.textContent = achievement.description;
+
+    const status = document.createElement('p');
+    status.textContent = achievement.unlocked ? 'Odblokowane' : 'Zablokowane';
+    status.style.opacity = 0.8;
+
+    card.append(title, description, status);
+    fragment.appendChild(card);
+  });
+
+  container.appendChild(fragment);
+}
+
+function checkAchievements() {
+  let unlockedAny = false;
+  gameState.achievements.forEach((achievement) => {
+    if (achievement.unlocked) {
+      return;
+    }
+    switch (achievement.id) {
+      case 'first_prestige':
+        if (gameState.stats.totalPrestiges >= 1) {
+          achievement.unlocked = true;
+          unlockedAny = true;
+        }
+        break;
+      case 'million_boops':
+        if (gameState.totalBoops >= 1_000_000) {
+          achievement.unlocked = true;
+          unlockedAny = true;
+        }
+        break;
+      case 'crit_master':
+        if (gameState.stats.totalCrits >= 100) {
+          achievement.unlocked = true;
+          unlockedAny = true;
+        }
+        break;
+      default:
+        break;
+    }
+  });
+
+  if (unlockedAny) {
+    saveGame();
+  }
+}
+
 function doBoop() {
   const baseGain = getFinalBpc();
   const isCrit = Math.random() < getEffectiveCritChance();
   let gain = baseGain;
 
+  gameState.stats.totalClicks += 1;
+
   if (isCrit) {
     gain *= gameState.critMultiplier;
+    gameState.stats.totalCrits += 1;
   }
 
   const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
@@ -712,6 +850,7 @@ function addBoops(amount) {
   }
   gameState.boops += amount;
   gameState.totalBoops += amount;
+  checkAchievements();
   return amount;
 }
 
@@ -775,6 +914,8 @@ function doPrestige() {
 
   gameState.boopEssence += gain;
   updateGlobalMultiplier();
+  gameState.stats.totalPrestiges += 1;
+  checkAchievements();
   resetProgressForPrestige();
   recalculateProductionStats();
   saveGame();

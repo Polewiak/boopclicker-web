@@ -368,6 +368,65 @@ body {
   background: rgba(255, 255, 255, 0.03);
 }
 
+#stats-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+#stats-section li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+#achievements-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(146, 255, 173, 0.4);
+  background: rgba(40, 80, 50, 0.4);
+}
+
+#achievements-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.achievement-card {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.85rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  opacity: 0.6;
+}
+
+.achievement-card.unlocked {
+  border-color: #7bffb4;
+  background: rgba(123, 255, 180, 0.12);
+  opacity: 1;
+}
+
+.achievement-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.achievement-card p {
+  margin: 0;
+  color: rgba(245, 245, 245, 0.9);
+}
+
 .footnote {
   margin: 1.5rem 0;
   font-size: 0.85rem;
