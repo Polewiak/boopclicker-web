@@ -81,38 +81,30 @@ const metaPerksConfig = [
   {
     id: 'stronger_pokes',
     name: 'Stronger Pokes',
-    description: '+5% BPC.',
+    description: '+5% BPC (stały bonus).',
     cost: 1,
     purchased: false,
-    effectType: 'bpcMultiplier',
-    effectValue: 0.05,
   },
   {
     id: 'idle_efficiency',
     name: 'Idle Efficiency',
-    description: '+5% BPS.',
+    description: '+5% BPS (stały bonus).',
     cost: 1,
     purchased: false,
-    effectType: 'bpsMultiplier',
-    effectValue: 0.05,
   },
   {
     id: 'crit_chance_up',
     name: 'Crit Chance Up',
-    description: '+1% crit chance.',
+    description: '+1% Critical Boop chance.',
     cost: 2,
     purchased: false,
-    effectType: 'critChance',
-    effectValue: 0.01,
   },
   {
     id: 'offline_mastery',
     name: 'Offline Mastery',
-    description: '+50% offline gain.',
+    description: '+25% efektywności offline.',
     cost: 3,
     purchased: false,
-    effectType: 'offlineEfficiency',
-    effectValue: 0.25,
   },
 ];
 
@@ -153,6 +145,7 @@ const ui = {
   clickUpgradesContainer: document.getElementById('click-upgrades-container'),
   autoUpgradesContainer: document.getElementById('auto-upgrades-container'),
   metaPerksContainer: document.getElementById('meta-perks-container'),
+  metaBeValue: document.getElementById('meta-be-value'),
   prestigeTotalBoops: document.getElementById('total-boops-value'),
   boopEssence: document.getElementById('boop-essence-value'),
   prestigeGain: document.getElementById('prestige-gain-value'),
@@ -283,36 +276,39 @@ function recalculateProductionStats() {
 
   gameState.bpc = baseBpc;
   gameState.bps = baseBps;
-  applyMetaPerkEffects();
+  applyAllMetaPerks();
 }
 
-function applyMetaPerkEffects() {
+function applyAllMetaPerks() {
   gameState.bpcMultiplier = 1;
   gameState.bpsMultiplier = 1;
   gameState.offlineEfficiency = BASE_OFFLINE_EFFICIENCY;
-  let critBonus = 0;
+  gameState.critChance = BASE_CRIT_CHANCE;
 
   gameState.metaPerks.forEach((perk) => {
-    if (!perk.purchased) return;
-    switch (perk.effectType) {
-      case 'bpcMultiplier':
-        gameState.bpcMultiplier += perk.effectValue;
-        break;
-      case 'bpsMultiplier':
-        gameState.bpsMultiplier += perk.effectValue;
-        break;
-      case 'critChance':
-        critBonus += perk.effectValue;
-        break;
-      case 'offlineEfficiency':
-        gameState.offlineEfficiency += perk.effectValue;
-        break;
-      default:
-        break;
+    if (perk.purchased) {
+      applyMetaPerkEffect(perk);
     }
   });
+}
 
-  gameState.critChance = BASE_CRIT_CHANCE + critBonus;
+function applyMetaPerkEffect(perk) {
+  switch (perk.id) {
+    case 'stronger_pokes':
+      gameState.bpcMultiplier += 0.05;
+      break;
+    case 'idle_efficiency':
+      gameState.bpsMultiplier += 0.05;
+      break;
+    case 'crit_chance_up':
+      gameState.critChance += 0.01;
+      break;
+    case 'offline_mastery':
+      gameState.offlineEfficiency += 0.25;
+      break;
+    default:
+      break;
+  }
 }
 
 function getFinalBpc() {
@@ -326,10 +322,10 @@ function getFinalBps() {
 function applyOfflineProgress() {
   const now = Date.now();
   const secondsPassed = Math.floor((now - (gameState.lastUpdate || now)) / 1000);
-  const passiveRate = getFinalBps();
+  const passiveRate = gameState.bps * gameState.bpsMultiplier * gameState.globalMultiplier;
   if (secondsPassed > 0 && passiveRate > 0) {
     const baseGain = secondsPassed * passiveRate * gameState.offlineEfficiency;
-    const actualGain = addBoops(baseGain);
+    const actualGain = addBoops(Math.floor(baseGain));
     announceOfflineGain(actualGain, secondsPassed);
   }
   gameState.lastUpdate = now;
@@ -348,6 +344,10 @@ function updateUI() {
   }
   if (ui.critMultiplier) {
     ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
+  }
+
+  if (ui.metaBeValue) {
+    ui.metaBeValue.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
   }
 
   renderUpgrades();
@@ -472,40 +472,41 @@ function renderMetaPerks() {
   if (!container) return;
   container.innerHTML = '';
 
-  const availablePerks = gameState.metaPerks.filter((perk) => !perk.purchased);
-  if (availablePerks.length === 0) {
-    const done = document.createElement('p');
-    done.className = 'upgrade-empty';
-    done.textContent = 'Meta tree complete (na ten moment).';
-    container.appendChild(done);
-    return;
-  }
-
   const fragment = document.createDocumentFragment();
-  availablePerks.forEach((perk) => {
+  gameState.metaPerks.forEach((perk) => {
     const card = document.createElement('article');
-    card.className = 'upgrade-card meta-card';
+    card.className = 'meta-perk-card';
+    if (perk.purchased) {
+      card.classList.add('purchased');
+    }
 
-    const title = document.createElement('h3');
-    title.textContent = perk.name;
+    const header = document.createElement('header');
+    const nameEl = document.createElement('span');
+    nameEl.textContent = perk.name;
+    const costEl = document.createElement('span');
+    costEl.textContent = `${numberFormatter.format(perk.cost)} BE`;
+    header.append(nameEl, costEl);
 
     const description = document.createElement('p');
     description.textContent = perk.description;
 
-    const cost = document.createElement('p');
-    cost.innerHTML = `Koszt: <strong>${numberFormatter.format(perk.cost)}</strong> BE`;
-
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'buy-button';
-    button.textContent = 'Buy';
-    const canAfford = gameState.boopEssence >= perk.cost;
-    button.disabled = !canAfford;
-    button.classList.toggle('disabled', !canAfford);
-    button.classList.toggle('is-affordable', canAfford);
-    button.addEventListener('click', () => buyMetaPerk(perk.id));
 
-    card.append(title, description, cost, button);
+    if (perk.purchased) {
+      button.textContent = 'Purchased';
+      button.disabled = true;
+    } else {
+      button.textContent = 'Buy';
+      const canAfford = gameState.boopEssence >= perk.cost;
+      button.disabled = !canAfford;
+      button.classList.toggle('disabled', !canAfford);
+      button.classList.toggle('is-affordable', canAfford);
+      button.addEventListener('click', () => buyMetaPerk(perk.id));
+    }
+
+    card.append(header, description, button);
     fragment.appendChild(card);
   });
 
@@ -513,15 +514,17 @@ function renderMetaPerks() {
 }
 
 function doBoop() {
-  const baseGain = getFinalBpc();
+  const baseGain = gameState.bpc * gameState.bpcMultiplier;
   const isCrit = Math.random() < gameState.critChance;
   let gain = baseGain;
 
   if (isCrit) {
-    gain = Math.round(baseGain * gameState.critMultiplier);
+    gain *= gameState.critMultiplier;
   }
 
-  const appliedGain = addBoops(gain);
+  gain *= gameState.globalMultiplier;
+  const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
+
   if (isCrit) {
     gameState.lastCritValue = appliedGain;
     showCritPopup(appliedGain);
@@ -568,8 +571,8 @@ function buyMetaPerk(id) {
 
   gameState.boopEssence -= perk.cost;
   perk.purchased = true;
+  applyMetaPerkEffect(perk);
   updateGlobalMultiplier();
-  recalculateProductionStats();
 
   updateUI();
   saveGame();
@@ -579,7 +582,11 @@ function gameLoop() {
   const now = Date.now();
   const elapsedSeconds = Math.floor((now - gameState.lastUpdate) / 1000);
   const secondsToApply = Math.max(1, elapsedSeconds);
-  addBoops(secondsToApply * getFinalBps());
+  const passiveGainPerSecond = gameState.bps * gameState.bpsMultiplier * gameState.globalMultiplier;
+  if (passiveGainPerSecond > 0) {
+    const gain = Math.floor(secondsToApply * passiveGainPerSecond);
+    addBoops(gain);
+  }
   gameState.lastUpdate = now;
   saveTimer += secondsToApply;
 
@@ -591,14 +598,13 @@ function gameLoop() {
   updateUI();
 }
 
-function addBoops(baseAmount) {
-  if (!Number.isFinite(baseAmount) || baseAmount <= 0) {
+function addBoops(amount) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     return 0;
   }
-  const gain = baseAmount * gameState.globalMultiplier;
-  gameState.boops += gain;
-  gameState.totalBoops += gain;
-  return gain;
+  gameState.boops += amount;
+  gameState.totalBoops += amount;
+  return amount;
 }
 
 function announceOfflineGain(gain, seconds) {

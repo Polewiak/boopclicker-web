@@ -273,15 +273,42 @@ body {
   letter-spacing: 0.5px;
 }
 
+#meta-perks-section p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
 #meta-perks-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.meta-card {
-  border-color: rgba(31, 199, 255, 0.5);
+.meta-perk-card {
+  border: 1px solid rgba(31, 199, 255, 0.5);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
   background-color: rgba(13, 25, 36, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.meta-perk-card header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.meta-perk-card button {
+  align-self: flex-end;
+  margin-top: 0.25rem;
+}
+
+.meta-perk-card.purchased {
+  opacity: 0.55;
 }
 
 #stats-section {
