@@ -1,7 +1,9 @@
-const STORAGE_KEY = 'boopclicker-save-v4';
+const STORAGE_KEY = 'boopclicker-save-v5';
 const SAVE_INTERVAL_SECONDS = 5;
 const BASE_BPC = 1;
 const BASE_BPS = 0;
+const BASE_CRIT_CHANCE = 0.03;
+const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 
@@ -75,18 +77,61 @@ const autoBoopersConfig = [
   },
 ];
 
+const metaPerksConfig = [
+  {
+    id: 'stronger_pokes',
+    name: 'Stronger Pokes',
+    description: '+5% BPC.',
+    cost: 1,
+    purchased: false,
+    effectType: 'bpcMultiplier',
+    effectValue: 0.05,
+  },
+  {
+    id: 'idle_efficiency',
+    name: 'Idle Efficiency',
+    description: '+5% BPS.',
+    cost: 1,
+    purchased: false,
+    effectType: 'bpsMultiplier',
+    effectValue: 0.05,
+  },
+  {
+    id: 'crit_chance_up',
+    name: 'Crit Chance Up',
+    description: '+1% crit chance.',
+    cost: 2,
+    purchased: false,
+    effectType: 'critChance',
+    effectValue: 0.01,
+  },
+  {
+    id: 'offline_mastery',
+    name: 'Offline Mastery',
+    description: '+50% offline gain.',
+    cost: 3,
+    purchased: false,
+    effectType: 'offlineEfficiency',
+    effectValue: 0.25,
+  },
+];
+
 const gameState = {
   boops: 0,
   totalBoops: 0,
   bpc: BASE_BPC,
   bps: BASE_BPS,
-  critChance: 0.03,
+  critChance: BASE_CRIT_CHANCE,
   critMultiplier: 7,
   lastCritValue: 0,
   bpcUpgrades: bpcUpgradesConfig.map((upgrade) => ({ ...upgrade })),
   autoBoopers: autoBoopersConfig.map((booper) => ({ ...booper })),
+  metaPerks: metaPerksConfig.map((perk) => ({ ...perk })),
   boopEssence: 0,
   globalMultiplier: 1,
+  bpcMultiplier: 1,
+  bpsMultiplier: 1,
+  offlineEfficiency: BASE_OFFLINE_EFFICIENCY,
   prestigeThreshold: PRESTIGE_THRESHOLD,
   lastUpdate: Date.now(),
 };
@@ -107,6 +152,7 @@ const ui = {
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesContainer: document.getElementById('click-upgrades-container'),
   autoUpgradesContainer: document.getElementById('auto-upgrades-container'),
+  metaPerksContainer: document.getElementById('meta-perks-container'),
   prestigeTotalBoops: document.getElementById('total-boops-value'),
   boopEssence: document.getElementById('boop-essence-value'),
   prestigeGain: document.getElementById('prestige-gain-value'),
@@ -144,15 +190,19 @@ function loadGame() {
     const data = JSON.parse(raw);
     gameState.boops = typeof data.boops === 'number' ? data.boops : gameState.boops;
     gameState.totalBoops = typeof data.totalBoops === 'number' ? data.totalBoops : gameState.totalBoops;
-    gameState.critChance = typeof data.critChance === 'number' ? data.critChance : gameState.critChance;
+    gameState.critChance = BASE_CRIT_CHANCE;
     gameState.critMultiplier = typeof data.critMultiplier === 'number' ? data.critMultiplier : gameState.critMultiplier;
     gameState.lastCritValue = typeof data.lastCritValue === 'number' ? data.lastCritValue : 0;
     gameState.boopEssence = typeof data.boopEssence === 'number' ? data.boopEssence : 0;
     gameState.globalMultiplier = 1 + gameState.boopEssence * 0.02;
+    gameState.bpcMultiplier = typeof data.bpcMultiplier === 'number' ? data.bpcMultiplier : 1;
+    gameState.bpsMultiplier = typeof data.bpsMultiplier === 'number' ? data.bpsMultiplier : 1;
+    gameState.offlineEfficiency = typeof data.offlineEfficiency === 'number' ? data.offlineEfficiency : BASE_OFFLINE_EFFICIENCY;
     gameState.prestigeThreshold = typeof data.prestigeThreshold === 'number' ? data.prestigeThreshold : PRESTIGE_THRESHOLD;
     gameState.lastUpdate = typeof data.lastUpdate === 'number' ? data.lastUpdate : Date.now();
     gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
     gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
+    gameState.metaPerks = restoreMetaPerks(data.metaPerks);
   } catch (error) {
     console.warn('Nie udało się wczytać zapisu', error);
   }
@@ -172,8 +222,12 @@ function saveGame() {
     lastCritValue: gameState.lastCritValue,
     bpcUpgrades: gameState.bpcUpgrades,
     autoBoopers: gameState.autoBoopers,
+    metaPerks: gameState.metaPerks,
     boopEssence: gameState.boopEssence,
     globalMultiplier: gameState.globalMultiplier,
+    bpcMultiplier: gameState.bpcMultiplier,
+    bpsMultiplier: gameState.bpsMultiplier,
+    offlineEfficiency: gameState.offlineEfficiency,
     prestigeThreshold: gameState.prestigeThreshold,
     lastUpdate: Date.now(),
   };
@@ -201,28 +255,80 @@ function restoreAutoBoopers(savedList) {
   });
 }
 
+function restoreMetaPerks(savedList) {
+  return metaPerksConfig.map((perk) => {
+    const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === perk.id) : null;
+    return {
+      ...perk,
+      purchased: saved?.purchased ?? false,
+    };
+  });
+}
+
 function recalculateProductionStats() {
-  gameState.bpc = BASE_BPC;
-  gameState.bps = BASE_BPS;
+  let baseBpc = BASE_BPC;
+  let baseBps = BASE_BPS;
 
   gameState.bpcUpgrades.forEach((upgrade) => {
     if (upgrade.purchased) {
-      gameState.bpc += upgrade.bonusBpc;
+      baseBpc += upgrade.bonusBpc;
     }
   });
 
   gameState.autoBoopers.forEach((booper) => {
     if (booper.level > 0) {
-      gameState.bps += booper.level * booper.bonusBpsPerLevel;
+      baseBps += booper.level * booper.bonusBpsPerLevel;
     }
   });
+
+  gameState.bpc = baseBpc;
+  gameState.bps = baseBps;
+  applyMetaPerkEffects();
+}
+
+function applyMetaPerkEffects() {
+  gameState.bpcMultiplier = 1;
+  gameState.bpsMultiplier = 1;
+  gameState.offlineEfficiency = BASE_OFFLINE_EFFICIENCY;
+  let critBonus = 0;
+
+  gameState.metaPerks.forEach((perk) => {
+    if (!perk.purchased) return;
+    switch (perk.effectType) {
+      case 'bpcMultiplier':
+        gameState.bpcMultiplier += perk.effectValue;
+        break;
+      case 'bpsMultiplier':
+        gameState.bpsMultiplier += perk.effectValue;
+        break;
+      case 'critChance':
+        critBonus += perk.effectValue;
+        break;
+      case 'offlineEfficiency':
+        gameState.offlineEfficiency += perk.effectValue;
+        break;
+      default:
+        break;
+    }
+  });
+
+  gameState.critChance = BASE_CRIT_CHANCE + critBonus;
+}
+
+function getFinalBpc() {
+  return gameState.bpc * gameState.bpcMultiplier;
+}
+
+function getFinalBps() {
+  return gameState.bps * gameState.bpsMultiplier;
 }
 
 function applyOfflineProgress() {
   const now = Date.now();
   const secondsPassed = Math.floor((now - (gameState.lastUpdate || now)) / 1000);
-  if (secondsPassed > 0 && gameState.bps > 0) {
-    const baseGain = secondsPassed * gameState.bps * 0.5;
+  const passiveRate = getFinalBps();
+  if (secondsPassed > 0 && passiveRate > 0) {
+    const baseGain = secondsPassed * passiveRate * gameState.offlineEfficiency;
     const actualGain = addBoops(baseGain);
     announceOfflineGain(actualGain, secondsPassed);
   }
@@ -230,10 +336,12 @@ function applyOfflineProgress() {
 }
 
 function updateUI() {
+  const finalBpc = getFinalBpc();
+  const finalBps = getFinalBps();
   ui.boops.textContent = numberFormatter.format(Math.floor(gameState.boops));
   ui.totalBoops.textContent = numberFormatter.format(Math.floor(gameState.totalBoops));
-  ui.bpc.textContent = numberFormatter.format(gameState.bpc);
-  ui.bps.textContent = numberFormatter.format(gameState.bps);
+  ui.bpc.textContent = numberFormatter.format(Math.round(finalBpc * 100) / 100);
+  ui.bps.textContent = numberFormatter.format(Math.round(finalBps * 100) / 100);
 
   if (ui.critChance) {
     ui.critChance.textContent = formatCritChance(gameState.critChance);
@@ -244,6 +352,7 @@ function updateUI() {
 
   renderUpgrades();
   updatePrestigeUI();
+  renderMetaPerks();
 }
 
 function updatePrestigeUI() {
@@ -358,8 +467,53 @@ function renderAutoBoopers() {
   container.appendChild(fragment);
 }
 
+function renderMetaPerks() {
+  const container = ui.metaPerksContainer;
+  if (!container) return;
+  container.innerHTML = '';
+
+  const availablePerks = gameState.metaPerks.filter((perk) => !perk.purchased);
+  if (availablePerks.length === 0) {
+    const done = document.createElement('p');
+    done.className = 'upgrade-empty';
+    done.textContent = 'Meta tree complete (na ten moment).';
+    container.appendChild(done);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  availablePerks.forEach((perk) => {
+    const card = document.createElement('article');
+    card.className = 'upgrade-card meta-card';
+
+    const title = document.createElement('h3');
+    title.textContent = perk.name;
+
+    const description = document.createElement('p');
+    description.textContent = perk.description;
+
+    const cost = document.createElement('p');
+    cost.innerHTML = `Koszt: <strong>${numberFormatter.format(perk.cost)}</strong> BE`;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'buy-button';
+    button.textContent = 'Buy';
+    const canAfford = gameState.boopEssence >= perk.cost;
+    button.disabled = !canAfford;
+    button.classList.toggle('disabled', !canAfford);
+    button.classList.toggle('is-affordable', canAfford);
+    button.addEventListener('click', () => buyMetaPerk(perk.id));
+
+    card.append(title, description, cost, button);
+    fragment.appendChild(card);
+  });
+
+  container.appendChild(fragment);
+}
+
 function doBoop() {
-  const baseGain = gameState.bpc;
+  const baseGain = getFinalBpc();
   const isCrit = Math.random() < gameState.critChance;
   let gain = baseGain;
 
@@ -406,11 +560,26 @@ function buyAutoBooper(id) {
   saveGame();
 }
 
+function buyMetaPerk(id) {
+  const perk = gameState.metaPerks.find((item) => item.id === id);
+  if (!perk || perk.purchased || gameState.boopEssence < perk.cost) {
+    return;
+  }
+
+  gameState.boopEssence -= perk.cost;
+  perk.purchased = true;
+  updateGlobalMultiplier();
+  recalculateProductionStats();
+
+  updateUI();
+  saveGame();
+}
+
 function gameLoop() {
   const now = Date.now();
   const elapsedSeconds = Math.floor((now - gameState.lastUpdate) / 1000);
   const secondsToApply = Math.max(1, elapsedSeconds);
-  addBoops(secondsToApply * gameState.bps);
+  addBoops(secondsToApply * getFinalBps());
   gameState.lastUpdate = now;
   saveTimer += secondsToApply;
 
@@ -440,7 +609,8 @@ function announceOfflineGain(gain, seconds) {
   }
 
   const roundedGain = numberFormatter.format(Math.floor(gain));
-  ui.offlineNotice.textContent = `Byłeś offline ${seconds}s i zyskałeś ${roundedGain} boops (50% efektywności).`;
+  const efficiencyPercent = Math.round(gameState.offlineEfficiency * 100);
+  ui.offlineNotice.textContent = `Byłeś offline ${seconds}s i zyskałeś ${roundedGain} boops (${efficiencyPercent}% efektywności).`;
   ui.offlineNotice.hidden = false;
 
   if (offlineNoticeTimeout) {
@@ -504,18 +674,18 @@ function resetProgressForPrestige() {
   gameState.bpcUpgrades = bpcUpgradesConfig.map((upgrade) => ({ ...upgrade }));
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.lastUpdate = Date.now();
-  // TODO: Zresetować dodatkowe meta-perki, gdy zostaną dodane.
+  // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
 }
 
 initGame();
 
-// TODO: Rozszerzyć prestiż o drzewko ulepszeń (meta progression).
-// TODO: Meta-perki kupowane za BE zwiększające crit chance.
+// TODO: Rozbudować meta tree o kolejne gałęzie i synergy boosty.
+// TODO: Dodać kolejne meta-perki (np. prestiżowe auto-rituały).
 // TODO: Social faction totems dzielone między graczy.
 
 /*
 Gra działa w pętli sekundowej, naliczając BPS * globalMultiplier oraz boopy z kliknięć,
-które korzystają z aktualnego BPC (w tym critów). Stan gry, prestiż oraz zakupione
-upgrade'y zapisują się w localStorage i obejmują progres offline. Rozszerzenia to TODO
-powyżej: prestiżowe meta-perki oraz społecznościowe totemy.
+które korzystają z aktualnego BPC (w tym critów). Stan gry, prestiż, meta-perki oraz
+zakupione upgrade'y zapisują się w localStorage i obejmują progres offline. Rozszerzenia
+to TODO powyżej: rozbudowane meta tree oraz społecznościowe totemy.
 */
