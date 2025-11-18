@@ -16,6 +16,7 @@ const bpcUpgradesConfig = [
     description: 'Szybkie potrząśnięcie uszami daje +5 BPC.',
     cost: 100,
     bonusBpc: 5,
+    unlockAt: 100,
     purchased: false,
   },
   {
@@ -24,6 +25,7 @@ const bpcUpgradesConfig = [
     description: 'Mocniejsze boopy od uroczych chłopów. +20 BPC.',
     cost: 500,
     bonusBpc: 20,
+    unlockAt: 500,
     purchased: false,
   },
   {
@@ -32,6 +34,7 @@ const bpcUpgradesConfig = [
     description: 'Drużyna himbo trenuje łapki. +80 BPC.',
     cost: 2000,
     bonusBpc: 80,
+    unlockAt: 2000,
     purchased: false,
   },
 ];
@@ -196,6 +199,7 @@ const ui = {
   bps: document.getElementById('bps'),
   critChance: document.getElementById('critChance'),
   critMultiplier: document.getElementById('critMultiplier'),
+  coreEssence: document.getElementById('core-boop-essence'),
   boopButton: document.getElementById('boopButton'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
@@ -216,9 +220,15 @@ const ui = {
   achievementsContainer: document.getElementById('achievements-container'),
   debugAddBoopsButton: document.getElementById('debug-add-boops'),
   debugResetButton: document.getElementById('debug-reset'),
+  quickBoops: document.getElementById('boops-quick'),
+  quickBpc: document.getElementById('bpc-quick'),
+  quickBps: document.getElementById('bps-quick'),
+  quickTotalBoops: document.getElementById('total-boops-quick'),
+  quickEssence: document.getElementById('essence-quick'),
 };
 
 function initGame() {
+  setupAccordions();
   loadGame();
   attachHandlers();
   renderUpgrades();
@@ -237,6 +247,15 @@ function attachHandlers() {
   ui.debugAddBoopsButton?.addEventListener('click', grantDebugBoops);
   ui.debugResetButton?.addEventListener('click', handleDebugResetClick);
   window.addEventListener('beforeunload', saveGame);
+}
+
+function setupAccordions() {
+  const headers = document.querySelectorAll('.accordion-header');
+  headers.forEach((header) => {
+    header.addEventListener('click', () => {
+      header.parentElement?.classList.toggle('open');
+    });
+  });
 }
 
 function loadGame() {
@@ -492,8 +511,28 @@ function updateUI() {
     ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
   }
 
+  if (ui.coreEssence) {
+    ui.coreEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
+  }
+
   if (ui.metaBeValue) {
     ui.metaBeValue.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
+  }
+
+  if (ui.quickBoops) {
+    ui.quickBoops.textContent = numberFormatter.format(Math.floor(gameState.boops));
+  }
+  if (ui.quickBpc) {
+    ui.quickBpc.textContent = numberFormatter.format(Math.round(finalBpc * 100) / 100);
+  }
+  if (ui.quickBps) {
+    ui.quickBps.textContent = numberFormatter.format(Math.round(finalBps * 100) / 100);
+  }
+  if (ui.quickTotalBoops) {
+    ui.quickTotalBoops.textContent = numberFormatter.format(Math.floor(gameState.totalBoops));
+  }
+  if (ui.quickEssence) {
+    ui.quickEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
   }
 
   renderUpgrades();
@@ -541,8 +580,18 @@ function renderBpcUpgrades() {
     return;
   }
 
+  const unlocked = availableUpgrades.filter((upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost));
+  const locked = availableUpgrades.filter((upgrade) => gameState.totalBoops < (upgrade.unlockAt ?? upgrade.cost));
+
+  if (unlocked.length === 0) {
+    const lockedInfo = document.createElement('p');
+    lockedInfo.className = 'locked-upgrade';
+    lockedInfo.textContent = 'Klikane ulepszenia odblokują się po zdobyciu większej liczby boops.';
+    container.appendChild(lockedInfo);
+  }
+
   const fragment = document.createDocumentFragment();
-  availableUpgrades.forEach((upgrade) => {
+  unlocked.forEach((upgrade) => {
     const card = document.createElement('article');
     card.className = 'upgrade-card';
 
@@ -566,6 +615,7 @@ function renderBpcUpgrades() {
     button.disabled = !canAfford;
     button.classList.toggle('disabled', !canAfford);
     button.classList.toggle('is-affordable', canAfford);
+    card.classList.toggle('affordable', canAfford);
     button.addEventListener('click', () => buyBpcUpgrade(upgrade.id));
 
     card.append(title, description, bonus, cost, button);
@@ -573,6 +623,21 @@ function renderBpcUpgrades() {
   });
 
   container.appendChild(fragment);
+
+  if (locked.length > 0) {
+    const lockedWrapper = document.createElement('div');
+    lockedWrapper.className = 'locked-upgrade';
+    const lockedTitle = document.createElement('p');
+    lockedTitle.textContent = 'Następne ulepszenia odblokują się przy:';
+    lockedWrapper.appendChild(lockedTitle);
+    locked.forEach((upgrade) => {
+      const item = document.createElement('p');
+      const threshold = numberFormatter.format(upgrade.unlockAt ?? upgrade.cost);
+      item.textContent = `${upgrade.name} – ${threshold} total boops`;
+      lockedWrapper.appendChild(item);
+    });
+    container.appendChild(lockedWrapper);
+  }
 }
 
 function renderAutoBoopers() {
@@ -607,6 +672,7 @@ function renderAutoBoopers() {
     button.disabled = !canAfford;
     button.classList.toggle('disabled', !canAfford);
     button.classList.toggle('is-affordable', canAfford);
+    card.classList.toggle('affordable', canAfford);
     button.addEventListener('click', () => buyAutoBooper(booper.id));
 
     card.append(title, description, meta, cost, button);
@@ -938,7 +1004,7 @@ function showCritPopup(value) {
   ui.critPopup.classList.add('show');
   setTimeout(() => {
     ui.critPopup?.classList.remove('show');
-  }, 300);
+  }, 600);
 }
 
 function formatCritChance(value) {

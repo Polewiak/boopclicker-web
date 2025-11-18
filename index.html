@@ -10,61 +10,73 @@
     <div id="app-container">
       <div id="columns">
         <aside id="col-left">
-          <section class="stats" aria-live="polite">
-            <div class="stat"><span>Boops:</span><strong id="boops">0</strong></div>
-            <div class="stat"><span>Total boops:</span><strong id="totalBoops">0</strong></div>
-            <div class="stat"><span>BPC:</span><strong id="bpc">1</strong></div>
-            <div class="stat"><span>BPS:</span><strong id="bps">0</strong></div>
-            <div class="stat"><span>Crit chance:</span><strong id="critChance">3%</strong></div>
-            <div class="stat"><span>Crit multiplier:</span><strong id="critMultiplier">×7</strong></div>
+          <section id="core-stats-section" aria-live="polite">
+            <h2>Core Stats</h2>
+            <div class="stat-line">Boops: <span class="stat-value" id="boops">0</span></div>
+            <div class="stat-line">Total boops: <span class="stat-value" id="totalBoops">0</span></div>
+            <div class="stat-line">BPC: <span class="stat-value" id="bpc">1</span></div>
+            <div class="stat-line">BPS: <span class="stat-value" id="bps">0</span></div>
+            <div class="stat-line">Crit chance: <span class="stat-value" id="critChance">3%</span></div>
+            <div class="stat-line">Crit multiplier: <span class="stat-value" id="critMultiplier">×7</span></div>
+            <div class="stat-line">Boop Essence: <span class="stat-value" id="core-boop-essence">0</span></div>
           </section>
 
-          <section id="prestige-section" aria-label="Prestige">
-            <h2>Prestige</h2>
-            <p>Total Boops: <strong id="total-boops-value">0</strong></p>
-            <p>Boop Essence: <strong id="boop-essence-value">0</strong></p>
-            <p>Potential BE on reset: <strong id="prestige-gain-value">0</strong></p>
-            <p>Global multiplier: <strong id="global-multiplier-value">1.00</strong>x</p>
-            <button id="prestige-button" type="button" disabled>Ascend (Prestige)</button>
+          <section class="accordion open">
+            <h3 class="accordion-header">Prestige</h3>
+            <div class="accordion-content" id="prestige-section" aria-label="Prestige">
+              <p>Total Boops: <strong id="total-boops-value">0</strong></p>
+              <p>Boop Essence: <strong id="boop-essence-value">0</strong></p>
+              <p>Potential BE on reset: <strong id="prestige-gain-value">0</strong></p>
+              <p>Global multiplier: <strong id="global-multiplier-value">1.00</strong>x</p>
+              <button id="prestige-button" type="button" disabled>Ascend (Prestige)</button>
+            </div>
           </section>
 
-          <section id="meta-perks-section" aria-label="Meta Tree">
-            <h2>Meta Perks (BE)</h2>
-            <p>
-              Boop Essence dostępne:
-              <strong id="meta-be-value">0</strong>
-            </p>
-            <div id="meta-perks-container"></div>
+          <section class="accordion open">
+            <h3 class="accordion-header">Meta Perks</h3>
+            <div class="accordion-content" id="meta-perks-section" aria-label="Meta Tree">
+              <p>
+                Boop Essence dostępne:
+                <strong id="meta-be-value">0</strong>
+              </p>
+              <div id="meta-perks-container"></div>
+            </div>
           </section>
 
-          <section id="faction-section" aria-label="Factions and Totems">
-            <h2>Your Faction</h2>
-            <div id="faction-current">Brak wybranego totemu.</div>
-            <h3>Change Faction (on Prestige)</h3>
-            <div id="faction-choice-container"></div>
+          <section class="accordion">
+            <h3 class="accordion-header">Factions</h3>
+            <div class="accordion-content" id="faction-section" aria-label="Factions and Totems">
+              <div id="faction-current">Brak wybranego totemu.</div>
+              <h3>Change Faction (on Prestige)</h3>
+              <div id="faction-choice-container"></div>
+            </div>
           </section>
 
-          <section id="stats-section" aria-live="polite">
-            <h2>Stats</h2>
-            <ul class="stats-list">
-              <li>
-                Total Clicks:
-                <strong id="stats-total-clicks">0</strong>
-              </li>
-              <li>
-                Total Critical Boops:
-                <strong id="stats-total-crits">0</strong>
-              </li>
-              <li>
-                Total Prestiges:
-                <strong id="stats-total-prestiges">0</strong>
-              </li>
-            </ul>
+          <section class="accordion">
+            <h3 class="accordion-header">Stats</h3>
+            <div class="accordion-content" id="stats-section" aria-live="polite">
+              <ul class="stats-list">
+                <li>
+                  Total Clicks:
+                  <strong id="stats-total-clicks">0</strong>
+                </li>
+                <li>
+                  Total Critical Boops:
+                  <strong id="stats-total-crits">0</strong>
+                </li>
+                <li>
+                  Total Prestiges:
+                  <strong id="stats-total-prestiges">0</strong>
+                </li>
+              </ul>
+            </div>
           </section>
 
-          <section id="achievements-section" aria-live="polite">
-            <h2>Achievements</h2>
-            <div id="achievements-container"></div>
+          <section class="accordion">
+            <h3 class="accordion-header">Achievements</h3>
+            <div class="accordion-content" id="achievements-section" aria-live="polite">
+              <div id="achievements-container"></div>
+            </div>
           </section>
 
           <section id="debug-section" aria-label="Debug tools">
@@ -78,29 +90,35 @@
         </aside>
 
         <section id="col-center">
-          <header class="hero">
-            <h1>Boopclicker</h1>
-            <p>Najbardziej miękka gra clickerowa z kotami w tle.</p>
-          </header>
+          <h1 id="game-title">Boopclicker</h1>
+          <p class="tagline">Najbardziej miękka gra clickerowa z kotami w tle.</p>
+
+          <div id="boop-display">
+            <div class="stat-line">Boops: <span class="stat-value" id="boops-quick">0</span></div>
+            <div class="stat-line">BPC: <span class="stat-value" id="bpc-quick">1</span></div>
+            <div class="stat-line">BPS: <span class="stat-value" id="bps-quick">0</span></div>
+            <div class="stat-line">Total Boops: <span class="stat-value" id="total-boops-quick">0</span></div>
+            <div class="stat-line">Boop Essence: <span class="stat-value" id="essence-quick">0</span></div>
+          </div>
 
           <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
             Witaj ponownie! Obliczam progres offline...
           </p>
 
-          <section class="boop-panel">
-            <button id="boopButton" class="boop-button" aria-label="Kliknij, aby boopnąć">
-              BOOP
-            </button>
+          <div class="boop-panel">
+            <button id="boopButton" aria-label="Kliknij, aby boopnąć">BOOP</button>
             <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
-          </section>
+          </div>
         </section>
 
         <aside id="col-right">
-          <section id="upgrades-section" aria-label="Upgrade'y">
-            <h2>Click Upgrades (BPC)</h2>
+          <section id="bpc-upgrades" aria-label="Click upgrades">
+            <h2>Click Upgrades</h2>
             <div id="click-upgrades-container" class="upgrades-container"></div>
+          </section>
 
-            <h2>Auto Upgrades (BPS)</h2>
+          <section id="bps-upgrades" aria-label="Auto-Boopers">
+            <h2>Auto-Boopers</h2>
             <div id="auto-upgrades-container" class="upgrades-container"></div>
           </section>
         </aside>
