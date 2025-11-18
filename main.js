@@ -203,6 +203,7 @@ const ui = {
   critChance: document.getElementById('critChance'),
   critMultiplier: document.getElementById('critMultiplier'),
   boopButton: document.getElementById('boopButton'),
+  boopFloatContainer: document.getElementById('boop-float-container'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesContainer: document.getElementById('click-upgrades-container'),
@@ -230,6 +231,21 @@ const storeTooltip = {
   description: document.getElementById('store-tooltip-description'),
   extra: document.getElementById('store-tooltip-extra'),
 };
+
+const sfx = {
+  boop: null,
+  crit: null,
+  buy: null,
+};
+
+function playSfx(name) {
+  const audio = sfx[name];
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {
+    // Audio playback can be blocked; ignore for now.
+  });
+}
 
 function markStoreDirty() {
   storeNeedsRender = true;
@@ -1030,6 +1046,9 @@ function doBoop() {
   }
 
   const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
+  spawnBoopFloat(appliedGain);
+  animateBoopButton();
+  playSfx(isCrit ? 'crit' : 'boop');
 
   if (isCrit) {
     gameState.lastCritValue = appliedGain;
@@ -1052,6 +1071,8 @@ function buyBpcUpgrade(id) {
   markStoreDirty();
 
   updateUI();
+  flashStoreRow(upgrade.id);
+  playSfx('buy');
   saveGame();
 }
 
@@ -1068,6 +1089,8 @@ function buyAutoBooper(id) {
   markStoreDirty();
 
   updateUI();
+  flashStoreRow(booper.id);
+  playSfx('buy');
   saveGame();
 }
 
@@ -1186,11 +1209,38 @@ function announceOfflineGain(gain, seconds) {
 
 function showCritPopup(value) {
   if (!ui.critPopup) return;
-  ui.critPopup.textContent = `CRITICAL! +${numberFormatter.format(Math.floor(value))}`;
+  ui.critPopup.textContent = `CRITICAL BOOP! +${numberFormatter.format(Math.floor(value))}`;
+  ui.critPopup.classList.remove('show');
+  void ui.critPopup.offsetWidth;
   ui.critPopup.classList.add('show');
+}
+
+function animateBoopButton() {
+  if (!ui.boopButton) return;
+  ui.boopButton.classList.remove('boop-anim');
+  void ui.boopButton.offsetWidth;
+  ui.boopButton.classList.add('boop-anim');
+}
+
+function spawnBoopFloat(amount) {
+  const container = ui.boopFloatContainer;
+  if (!container || amount <= 0) return;
+  const bubble = document.createElement('div');
+  bubble.className = 'boop-float';
+  bubble.textContent = `+${numberFormatter.format(Math.floor(amount))}`;
+  container.appendChild(bubble);
   setTimeout(() => {
-    ui.critPopup?.classList.remove('show');
-  }, 600);
+    bubble.remove();
+  }, 800);
+}
+
+function flashStoreRow(id) {
+  if (!id) return;
+  const row = document.querySelector(`.store-row[data-id="${id}"]`);
+  if (!row) return;
+  row.classList.remove('purchased-flash');
+  void row.offsetWidth;
+  row.classList.add('purchased-flash');
 }
 
 function formatCritChance(value) {
