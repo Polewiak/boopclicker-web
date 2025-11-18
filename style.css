@@ -1,0 +1,158 @@
+:root {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #222, #0c0c0c 70%);
+  color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.game-shell {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+}
+
+.stat span {
+  opacity: 0.7;
+}
+
+.boop-panel {
+  display: flex;
+}
+
+.boop-button {
+  flex: 1;
+  border: none;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  font-size: clamp(1.5rem, 8vw, 2.5rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, #ff7de9, #ff4d8d);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+  box-shadow: 0 0.75rem 1.5rem rgba(255, 77, 141, 0.4);
+}
+
+.boop-button:active {
+  transform: translateY(2px) scale(0.99);
+  filter: brightness(0.95);
+}
+
+.upgrades {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.offline-notice {
+  margin: -0.5rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(31, 199, 255, 0.12);
+  border: 1px solid rgba(31, 199, 255, 0.3);
+  color: #c6f4ff;
+  font-size: 0.95rem;
+  text-align: center;
+  transition: opacity 200ms ease;
+}
+
+.offline-notice[hidden] {
+  display: block;
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  border-width: 0;
+  overflow: hidden;
+}
+
+.upgrade {
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.upgrade h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.buy-button {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  background: #1fc7ff;
+  color: #040404;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.buy-button.is-affordable {
+  box-shadow: 0 0 12px rgba(31, 199, 255, 0.35);
+}
+
+.buy-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.footnote {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  opacity: 0.65;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1rem;
+  }
+
+  .stats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}

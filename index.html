@@ -1,9 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Boopclicker</title>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <h1>Boopclicker – loading…</h1>
+    <header class="hero">
+      <h1>Boopclicker</h1>
+      <p>Najbardziej miękka gra clickerowa z kotami w tle.</p>
+    </header>
+
+    <main class="game-shell">
+      <section class="stats" aria-live="polite">
+        <div class="stat"><span>Boops:</span><strong id="boops">0</strong></div>
+        <div class="stat"><span>Total boops:</span><strong id="totalBoops">0</strong></div>
+        <div class="stat"><span>BPC:</span><strong id="bpc">1</strong></div>
+        <div class="stat"><span>BPS:</span><strong id="bps">0</strong></div>
+      </section>
+
+      <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
+        Witaj ponownie! Obliczam progres offline...
+      </p>
+
+      <section class="boop-panel">
+        <button id="boopButton" class="boop-button" aria-label="Kliknij, aby boopnąć">
+          BOOP
+        </button>
+      </section>
+
+      <section class="upgrades" aria-label="Upgrade'y">
+        <article class="upgrade" data-type="bpc">
+          <h2>Soft Paw Tap</h2>
+          <p>Podwija rękawy i boopuje mocniej.</p>
+          <p>Poziom: <span class="level" id="bpcLevel">0</span></p>
+          <p>Koszt: <span class="cost" id="bpcCost">10</span> boops</p>
+          <button id="bpcBuy" class="buy-button">Buy</button>
+        </article>
+        <article class="upgrade" data-type="bps">
+          <h2>Feral Toaster</h2>
+          <p>Wypluwa pasywne boopy podczas snu.</p>
+          <p>Poziom: <span class="level" id="bpsLevel">0</span></p>
+          <p>Koszt: <span class="cost" id="bpsCost">50</span> boops</p>
+          <button id="bpsBuy" class="buy-button">Buy</button>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footnote">
+      <p>Zapisywany lokalnie, gotowy na GitHub Pages.</p>
+    </footer>
+
+    <script src="./main.js"></script>
   </body>
 </html>
