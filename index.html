@@ -8,90 +8,65 @@
   </head>
   <body>
     <div id="app-container">
-      <main id="tab-content">
-        <section id="tab-main" class="tab-view active">
-          <div class="game-shell">
-            <header class="hero">
-              <h1>Boopclicker</h1>
-              <p>Najbardziej miękka gra clickerowa z kotami w tle.</p>
-            </header>
+      <div id="columns">
+        <aside id="col-left">
+          <section class="stats" aria-live="polite">
+            <div class="stat"><span>Boops:</span><strong id="boops">0</strong></div>
+            <div class="stat"><span>Total boops:</span><strong id="totalBoops">0</strong></div>
+            <div class="stat"><span>BPC:</span><strong id="bpc">1</strong></div>
+            <div class="stat"><span>BPS:</span><strong id="bps">0</strong></div>
+            <div class="stat"><span>Crit chance:</span><strong id="critChance">3%</strong></div>
+            <div class="stat"><span>Crit multiplier:</span><strong id="critMultiplier">×7</strong></div>
+          </section>
 
-            <section class="stats" aria-live="polite">
-              <div class="stat"><span>Boops:</span><strong id="boops">0</strong></div>
-              <div class="stat"><span>Total boops:</span><strong id="totalBoops">0</strong></div>
-              <div class="stat"><span>BPC:</span><strong id="bpc">1</strong></div>
-              <div class="stat"><span>BPS:</span><strong id="bps">0</strong></div>
-              <div class="stat"><span>Crit chance:</span><strong id="critChance">3%</strong></div>
-              <div class="stat"><span>Crit multiplier:</span><strong id="critMultiplier">×7</strong></div>
-            </section>
+          <section id="prestige-section" aria-label="Prestige">
+            <h2>Prestige</h2>
+            <p>Total Boops: <strong id="total-boops-value">0</strong></p>
+            <p>Boop Essence: <strong id="boop-essence-value">0</strong></p>
+            <p>Potential BE on reset: <strong id="prestige-gain-value">0</strong></p>
+            <p>Global multiplier: <strong id="global-multiplier-value">1.00</strong>x</p>
+            <button id="prestige-button" type="button" disabled>Ascend (Prestige)</button>
+          </section>
 
-            <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
-              Witaj ponownie! Obliczam progres offline...
-            </p>
+          <section id="meta-perks-section" aria-label="Meta Tree">
+            <h2>Meta Perks (BE)</h2>
+            <div id="meta-perks-container" class="upgrades-container"></div>
+          </section>
 
-            <section class="boop-panel">
-              <button id="boopButton" class="boop-button" aria-label="Kliknij, aby boopnąć">
-                BOOP
-              </button>
-              <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
-            </section>
-          </div>
+          <section id="stats-section" aria-live="polite">
+            <h2>Stats</h2>
+            <p>Coming soon: more stats here.</p>
+          </section>
+        </aside>
+
+        <section id="col-center">
+          <header class="hero">
+            <h1>Boopclicker</h1>
+            <p>Najbardziej miękka gra clickerowa z kotami w tle.</p>
+          </header>
+
+          <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
+            Witaj ponownie! Obliczam progres offline...
+          </p>
+
+          <section class="boop-panel">
+            <button id="boopButton" class="boop-button" aria-label="Kliknij, aby boopnąć">
+              BOOP
+            </button>
+            <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
+          </section>
         </section>
 
-        <section id="tab-upgrades" class="tab-view">
-          <div class="game-shell">
-            <section id="upgrades-section" aria-label="Upgrade'y">
-              <h2>Click Upgrades (BPC)</h2>
-              <div id="click-upgrades-container" class="upgrades-container"></div>
+        <aside id="col-right">
+          <section id="upgrades-section" aria-label="Upgrade'y">
+            <h2>Click Upgrades (BPC)</h2>
+            <div id="click-upgrades-container" class="upgrades-container"></div>
 
-              <h2>Auto Upgrades (BPS)</h2>
-              <div id="auto-upgrades-container" class="upgrades-container"></div>
-            </section>
-          </div>
-        </section>
-
-        <section id="tab-prestige" class="tab-view">
-          <div class="game-shell">
-            <section id="prestige-section" aria-label="Prestige">
-              <h2>Prestige</h2>
-              <p>Total Boops: <strong id="total-boops-value">0</strong></p>
-              <p>Boop Essence: <strong id="boop-essence-value">0</strong></p>
-              <p>Potential BE on reset: <strong id="prestige-gain-value">0</strong></p>
-              <p>Global multiplier: <strong id="global-multiplier-value">1.00</strong>x</p>
-              <button id="prestige-button" type="button" disabled>Ascend (Prestige)</button>
-            </section>
-
-            <section id="meta-perks-section" aria-label="Meta Tree">
-              <h2>Meta Perks (BE)</h2>
-              <div id="meta-perks-container" class="upgrades-container"></div>
-            </section>
-          </div>
-        </section>
-
-        <section id="tab-stats" class="tab-view">
-          <div class="game-shell">
-            <section class="stats" aria-live="polite">
-              <h2>Stats</h2>
-              <p>Coming soon: more stats here.</p>
-            </section>
-          </div>
-        </section>
-      </main>
-
-      <nav id="bottom-nav" aria-label="Nawigacja zakładek">
-        <button class="nav-button active" data-tab="tab-main" type="button">
-          🐾<span>Main</span>
-        </button>
-        <button class="nav-button" data-tab="tab-upgrades" type="button">
-          ⭐<span>Upgrades</span>
-        </button>
-        <button class="nav-button" data-tab="tab-prestige" type="button">
-          🔥<span>Prestige</span>
-        </button>
-        <button class="nav-button" data-tab="tab-stats" type="button">
-          📊<span>Stats</span>
-        </button>
-      </nav>
+            <h2>Auto Upgrades (BPS)</h2>
+            <div id="auto-upgrades-container" class="upgrades-container"></div>
+          </section>
+        </aside>
+      </div>
     </div>
 
     <footer class="footnote">

@@ -161,7 +161,6 @@ const ui = {
 };
 
 function initGame() {
-  setupTabs();
   loadGame();
   attachHandlers();
   renderUpgrades();
@@ -178,29 +177,6 @@ function attachHandlers() {
     doPrestige();
   });
   window.addEventListener('beforeunload', saveGame);
-}
-
-function setupTabs() {
-  const navButtons = document.querySelectorAll('.nav-button');
-  const tabViews = document.querySelectorAll('.tab-view');
-  if (!navButtons.length || !tabViews.length) {
-    return;
-  }
-
-  navButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const targetId = button.getAttribute('data-tab');
-      navButtons.forEach((btn) => btn.classList.remove('active'));
-      button.classList.add('active');
-      tabViews.forEach((view) => {
-        if (view.id === targetId) {
-          view.classList.add('active');
-        } else {
-          view.classList.remove('active');
-        }
-      });
-    });
-  });
 }
 
 function loadGame() {
