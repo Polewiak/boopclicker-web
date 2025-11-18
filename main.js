@@ -193,13 +193,13 @@ let offlineNoticeTimeout = null;
 let passiveGainRemainder = 0;
 
 const ui = {
-  boops: document.getElementById('boops'),
-  totalBoops: document.getElementById('totalBoops'),
-  bpc: document.getElementById('bpc'),
-  bps: document.getElementById('bps'),
+  topBoops: document.getElementById('ts-boops'),
+  topBpc: document.getElementById('ts-bpc'),
+  topBps: document.getElementById('ts-bps'),
+  topTotalBoops: document.getElementById('ts-total-boops'),
+  topEssence: document.getElementById('ts-boop-essence'),
   critChance: document.getElementById('critChance'),
   critMultiplier: document.getElementById('critMultiplier'),
-  coreEssence: document.getElementById('core-boop-essence'),
   boopButton: document.getElementById('boopButton'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
@@ -220,11 +220,6 @@ const ui = {
   achievementsContainer: document.getElementById('achievements-container'),
   debugAddBoopsButton: document.getElementById('debug-add-boops'),
   debugResetButton: document.getElementById('debug-reset'),
-  quickBoops: document.getElementById('boops-quick'),
-  quickBpc: document.getElementById('bpc-quick'),
-  quickBps: document.getElementById('bps-quick'),
-  quickTotalBoops: document.getElementById('total-boops-quick'),
-  quickEssence: document.getElementById('essence-quick'),
 };
 
 const storeTooltip = {
@@ -234,8 +229,54 @@ const storeTooltip = {
   extra: document.getElementById('store-tooltip-extra'),
 };
 
+const modalControls = {
+  overlay: document.getElementById('modal-overlay'),
+  closeButton: document.getElementById('modal-close'),
+};
+
+function setupModals() {
+  const sideButtons = document.querySelectorAll('.side-menu-btn');
+  sideButtons.forEach((button) => {
+    const targetId = button.getAttribute('data-modal');
+    button.addEventListener('click', () => openModal(targetId));
+  });
+
+  modalControls.closeButton?.addEventListener('click', closeModal);
+  modalControls.overlay?.addEventListener('click', (event) => {
+    if (event.target === modalControls.overlay) {
+      closeModal();
+    }
+  });
+}
+
+function openModal(targetId) {
+  if (!targetId || !modalControls.overlay) {
+    return;
+  }
+
+  document.querySelectorAll('.modal-content').forEach((content) => {
+    content.classList.add('hidden');
+  });
+
+  const target = document.getElementById(targetId);
+  if (!target) {
+    return;
+  }
+
+  hideStoreTooltip();
+  target.classList.remove('hidden');
+  modalControls.overlay.classList.remove('hidden');
+}
+
+function closeModal() {
+  document.querySelectorAll('.modal-content').forEach((content) => {
+    content.classList.add('hidden');
+  });
+  modalControls.overlay?.classList.add('hidden');
+}
+
 function initGame() {
-  setupAccordions();
+  setupModals();
   loadGame();
   attachHandlers();
   renderUpgrades();
@@ -254,14 +295,10 @@ function attachHandlers() {
   ui.debugAddBoopsButton?.addEventListener('click', grantDebugBoops);
   ui.debugResetButton?.addEventListener('click', handleDebugResetClick);
   window.addEventListener('beforeunload', saveGame);
-}
-
-function setupAccordions() {
-  const headers = document.querySelectorAll('.accordion-header');
-  headers.forEach((header) => {
-    header.addEventListener('click', () => {
-      header.parentElement?.classList.toggle('open');
-    });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
   });
 }
 
@@ -506,10 +543,26 @@ function applyOfflineProgress() {
 function updateUI() {
   const finalBpc = getFinalBpc();
   const finalBps = getFinalBps();
-  ui.boops.textContent = numberFormatter.format(Math.floor(gameState.boops));
-  ui.totalBoops.textContent = numberFormatter.format(Math.floor(gameState.totalBoops));
-  ui.bpc.textContent = numberFormatter.format(Math.round(finalBpc * 100) / 100);
-  ui.bps.textContent = numberFormatter.format(Math.round(finalBps * 100) / 100);
+  const formattedBoops = numberFormatter.format(Math.floor(gameState.boops));
+  const formattedTotal = numberFormatter.format(Math.floor(gameState.totalBoops));
+  const formattedBpc = numberFormatter.format(Math.round(finalBpc * 100) / 100);
+  const formattedBps = numberFormatter.format(Math.round(finalBps * 100) / 100);
+
+  if (ui.topBoops) {
+    ui.topBoops.textContent = formattedBoops;
+  }
+  if (ui.topTotalBoops) {
+    ui.topTotalBoops.textContent = formattedTotal;
+  }
+  if (ui.topBpc) {
+    ui.topBpc.textContent = formattedBpc;
+  }
+  if (ui.topBps) {
+    ui.topBps.textContent = formattedBps;
+  }
+  if (ui.topEssence) {
+    ui.topEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
+  }
 
   if (ui.critChance) {
     ui.critChance.textContent = formatCritChance(getEffectiveCritChance());
@@ -518,28 +571,8 @@ function updateUI() {
     ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
   }
 
-  if (ui.coreEssence) {
-    ui.coreEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
-  }
-
   if (ui.metaBeValue) {
     ui.metaBeValue.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
-  }
-
-  if (ui.quickBoops) {
-    ui.quickBoops.textContent = numberFormatter.format(Math.floor(gameState.boops));
-  }
-  if (ui.quickBpc) {
-    ui.quickBpc.textContent = numberFormatter.format(Math.round(finalBpc * 100) / 100);
-  }
-  if (ui.quickBps) {
-    ui.quickBps.textContent = numberFormatter.format(Math.round(finalBps * 100) / 100);
-  }
-  if (ui.quickTotalBoops) {
-    ui.quickTotalBoops.textContent = numberFormatter.format(Math.floor(gameState.totalBoops));
-  }
-  if (ui.quickEssence) {
-    ui.quickEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
   }
 
   renderUpgrades();
