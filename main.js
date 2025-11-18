@@ -191,6 +191,8 @@ let intervalId = null;
 let saveTimer = 0;
 let offlineNoticeTimeout = null;
 let passiveGainRemainder = 0;
+let storeNeedsRender = true;
+let lastUnlockedClickCount = 0;
 
 const ui = {
   topBoops: document.getElementById('ts-boops'),
@@ -228,6 +230,71 @@ const storeTooltip = {
   description: document.getElementById('store-tooltip-description'),
   extra: document.getElementById('store-tooltip-extra'),
 };
+
+function markStoreDirty() {
+  storeNeedsRender = true;
+}
+
+function getUnlockedClickUpgradeCount() {
+  return gameState.bpcUpgrades.filter(
+    (upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost)
+  ).length;
+}
+
+function updateStoreUI() {
+  if (getUnlockedClickUpgradeCount() !== lastUnlockedClickCount) {
+    storeNeedsRender = true;
+  }
+
+  if (storeNeedsRender) {
+    renderUpgrades();
+    storeNeedsRender = false;
+  } else {
+    refreshStoreRowAffordability();
+  }
+}
+
+function refreshStoreRowAffordability() {
+  const rows = document.querySelectorAll('.store-row');
+  if (!rows.length) {
+    return;
+  }
+
+  rows.forEach((row) => {
+    if (row.classList.contains('disabled')) {
+      row.classList.remove('affordable');
+      return;
+    }
+
+    const { id, type } = row.dataset;
+    if (!id || !type) {
+      return;
+    }
+
+    let canAfford = false;
+    if (type === 'click') {
+      const upgrade = gameState.bpcUpgrades.find((item) => item.id === id);
+      if (upgrade) {
+        canAfford = gameState.boops >= upgrade.cost;
+      }
+    } else if (type === 'auto') {
+      const booper = gameState.autoBoopers.find((item) => item.id === id);
+      if (booper) {
+        canAfford = gameState.boops >= booper.currentCost;
+        const ownedEl = row.querySelector('.store-sub');
+        if (ownedEl) {
+          ownedEl.textContent = `Owned: ${numberFormatter.format(booper.level)}`;
+        }
+        const costEl = row.querySelector('.store-cost');
+        if (costEl) {
+          costEl.textContent = `${numberFormatter.format(booper.currentCost)} boops`;
+        }
+      }
+    }
+
+    row.classList.toggle('affordable', canAfford);
+  });
+}
 
 const modalControls = {
   overlay: document.getElementById('modal-overlay'),
@@ -279,7 +346,7 @@ function initGame() {
   setupModals();
   loadGame();
   attachHandlers();
-  renderUpgrades();
+  markStoreDirty();
   updateUI();
   if (intervalId) {
     clearInterval(intervalId);
@@ -347,6 +414,7 @@ function loadGame() {
   recalculateProductionStats();
   applyOfflineProgress();
   checkAchievements();
+  markStoreDirty();
 }
 
 function saveGame() {
@@ -575,7 +643,7 @@ function updateUI() {
     ui.metaBeValue.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
   }
 
-  renderUpgrades();
+  updateStoreUI();
   updatePrestigeUI();
   renderMetaPerks();
   renderFactions();
@@ -716,6 +784,7 @@ function renderBpcUpgrades() {
   const unlocked = gameState.bpcUpgrades.filter(
     (upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost)
   );
+  lastUnlockedClickCount = unlocked.length;
   const locked = gameState.bpcUpgrades.filter(
     (upgrade) => !upgrade.purchased && gameState.totalBoops < (upgrade.unlockAt ?? upgrade.cost)
   );
@@ -980,6 +1049,7 @@ function buyBpcUpgrade(id) {
   gameState.boops -= upgrade.cost;
   upgrade.purchased = true;
   recalculateProductionStats();
+  markStoreDirty();
 
   updateUI();
   saveGame();
@@ -995,6 +1065,7 @@ function buyAutoBooper(id) {
   booper.level += 1;
   booper.currentCost = Math.ceil(booper.currentCost * booper.scale);
   recalculateProductionStats();
+  markStoreDirty();
 
   updateUI();
   saveGame();
@@ -1054,6 +1125,7 @@ function hardResetGame() {
   gameState.lastUpdate = Date.now();
   recalculateProductionStats();
   updateGlobalMultiplier();
+  markStoreDirty();
   saveGame();
   updateUI();
 }
@@ -1167,6 +1239,7 @@ function resetProgressForPrestige() {
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.lastUpdate = Date.now();
   applyFactionBonusById(gameState.currentFaction);
+  markStoreDirty();
   // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
 }
 
