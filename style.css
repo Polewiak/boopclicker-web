@@ -394,6 +394,10 @@ button {
   transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.07s ease;
 }
 
+.upgrade-card {
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
 .store-row:hover,
 .store-row:focus-visible {
   background: #262626;
@@ -414,6 +418,29 @@ button {
 
 .store-row.purchased-flash {
   animation: store-purchased 0.25s ease-out;
+}
+
+.upgrade-card.upgrade-unaffordable {
+  opacity: 0.6;
+  border-color: #444;
+}
+
+.upgrade-card.upgrade-available {
+  opacity: 1;
+  border-color: #4caf50;
+}
+
+@keyframes upgradePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(76, 175, 80, 0);
+  }
+}
+
+.upgrade-card.upgrade-just-unlocked {
+  animation: upgradePulse 1s ease-out;
 }
 
 #skins-shop {

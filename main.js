@@ -18,6 +18,7 @@ const bpcUpgradesConfig = [
     bonusBpc: 5,
     unlockAt: 100,
     purchased: false,
+    wasAffordable: false,
   },
   {
     id: 'boy_bopper',
@@ -27,6 +28,7 @@ const bpcUpgradesConfig = [
     bonusBpc: 20,
     unlockAt: 500,
     purchased: false,
+    wasAffordable: false,
   },
   {
     id: 'himbo_hooters',
@@ -36,6 +38,7 @@ const bpcUpgradesConfig = [
     bonusBpc: 80,
     unlockAt: 2000,
     purchased: false,
+    wasAffordable: false,
   },
 ];
 
@@ -49,6 +52,7 @@ const autoBoopersConfig = [
     currentCost: 50,
     scale: 1.17,
     bonusBpsPerLevel: 1,
+    wasAffordable: false,
   },
   {
     id: 'overworked_fox_intern',
@@ -59,6 +63,7 @@ const autoBoopersConfig = [
     currentCost: 300,
     scale: 1.18,
     bonusBpsPerLevel: 8,
+    wasAffordable: false,
   },
   {
     id: 'wolfgirl_call_center',
@@ -69,6 +74,7 @@ const autoBoopersConfig = [
     currentCost: 2000,
     scale: 1.18,
     bonusBpsPerLevel: 45,
+    wasAffordable: false,
   },
   {
     id: 'boomerang_otter_crew',
@@ -79,6 +85,7 @@ const autoBoopersConfig = [
     currentCost: 12000,
     scale: 1.19,
     bonusBpsPerLevel: 250,
+    wasAffordable: false,
   },
 ];
 
@@ -355,6 +362,8 @@ function updateStoreUI() {
   } else {
     refreshStoreRowAffordability();
   }
+
+  updateUpgradeCardVisuals();
 }
 
 function refreshStoreRowAffordability() {
@@ -396,6 +405,54 @@ function refreshStoreRowAffordability() {
     }
 
     row.classList.toggle('affordable', canAfford);
+  });
+}
+
+function updateUpgradeCardVisuals() {
+  const boops = gameState.boops;
+
+  gameState.bpcUpgrades.forEach((upgrade) => {
+    if (typeof upgrade.wasAffordable !== 'boolean') {
+      upgrade.wasAffordable = false;
+    }
+    const card = document.getElementById(`${upgrade.id}-card`);
+    if (!card) return;
+
+    const affordable = !upgrade.purchased && boops >= upgrade.cost;
+    card.classList.remove('upgrade-available', 'upgrade-unaffordable');
+
+    if (affordable) {
+      card.classList.add('upgrade-available');
+      if (!upgrade.wasAffordable) {
+        card.classList.add('upgrade-just-unlocked');
+        upgrade.wasAffordable = true;
+        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 1000);
+      }
+    } else {
+      card.classList.add('upgrade-unaffordable');
+    }
+  });
+
+  gameState.autoBoopers.forEach((booper) => {
+    if (typeof booper.wasAffordable !== 'boolean') {
+      booper.wasAffordable = false;
+    }
+    const card = document.getElementById(`${booper.id}-card`);
+    if (!card) return;
+
+    const affordable = gameState.boops >= booper.currentCost;
+    card.classList.remove('upgrade-available', 'upgrade-unaffordable');
+
+    if (affordable) {
+      card.classList.add('upgrade-available');
+      if (!booper.wasAffordable) {
+        card.classList.add('upgrade-just-unlocked');
+        booper.wasAffordable = true;
+        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 1000);
+      }
+    } else {
+      card.classList.add('upgrade-unaffordable');
+    }
   });
 }
 
@@ -635,6 +692,7 @@ function restoreBpcUpgrades(savedList) {
     return {
       ...upgrade,
       purchased: saved?.purchased ?? false,
+      wasAffordable: saved?.wasAffordable ?? false,
     };
   });
 }
@@ -646,6 +704,7 @@ function restoreAutoBoopers(savedList) {
       ...booper,
       level: saved?.level ?? 0,
       currentCost: saved?.currentCost ?? booper.baseCost,
+      wasAffordable: saved?.wasAffordable ?? false,
     };
   });
 }
@@ -1013,7 +1072,8 @@ function handleStoreRowPurchase(data) {
 
 function createStoreRow({ icon, name, subLabel, costLabel, dataset, affordable, disabled, tooltipData }) {
   const row = document.createElement('div');
-  row.className = 'store-row';
+  row.className = 'store-row upgrade-card';
+  row.id = `${dataset.id}-card`;
   if (affordable) {
     row.classList.add('affordable');
   }
