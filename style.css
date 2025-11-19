@@ -100,6 +100,57 @@ button {
   border: 1px solid #333;
 }
 
+#profile-section {
+  width: 100%;
+  padding: 12px;
+  background: #202020;
+  border-radius: 10px;
+  border: 1px solid #333;
+}
+
+#profile-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#profile-avatar {
+  font-size: 24px;
+}
+
+#profile-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#profile-edit input,
+#profile-edit select {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+#profile-edit button {
+  width: 100%;
+  padding: 8px;
+  font-size: 13px;
+}
+
+#skin-stats-section {
+  width: 100%;
+  padding: 10px 12px;
+  background: #181818;
+  border-radius: 10px;
+  border: 1px solid #333;
+  font-size: 13px;
+}
+
 .top-stat {
   font-size: 14px;
   color: #ddd;

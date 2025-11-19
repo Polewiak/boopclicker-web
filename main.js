@@ -137,6 +137,27 @@ const factionConfig = [
   },
 ];
 
+const skinsConfig = [
+  {
+    id: 'default_paw',
+    name: 'Default Paw',
+    preview: '🐾',
+    owned: true,
+    unlockCost: 0,
+    unlockCode: null,
+    boops: 0,
+  },
+  {
+    id: 'pink_glow',
+    name: 'Pink Glow',
+    preview: '✨',
+    owned: false,
+    unlockCost: 0,
+    unlockCode: 'achievement_prestige_1',
+    boops: 0,
+  },
+];
+
 const achievements = [
   {
     id: 'boop_100',
@@ -191,6 +212,10 @@ const gameState = {
   bpcUpgrades: bpcUpgradesConfig.map((upgrade) => ({ ...upgrade })),
   autoBoopers: autoBoopersConfig.map((booper) => ({ ...booper })),
   metaPerks: metaPerksConfig.map((perk) => ({ ...perk })),
+  skins: skinsConfig.map((skin) => ({ ...skin })),
+  currentSkinId: 'default_paw',
+  playerName: 'Anonymous',
+  playerAvatar: '🧸',
   factions: factionConfig.map((faction) => ({ ...faction })),
   currentFaction: null,
   factionBonus: { crit: 0, bps: 0, bpc: 0 },
@@ -234,6 +259,11 @@ const ui = {
   autoUpgradesContainer: document.getElementById('auto-upgrades-container'),
   metaPerksContainer: document.getElementById('meta-perks-container'),
   metaBeValue: document.getElementById('meta-be-value'),
+  profileName: document.getElementById('profile-name'),
+  profileAvatar: document.getElementById('profile-avatar'),
+  currentSkinBoops: document.getElementById('current-skin-boops'),
+  topSkinName: document.getElementById('top-skin-name'),
+  topSkinBoops: document.getElementById('top-skin-boops'),
   factionCurrent: document.getElementById('faction-current'),
   factionChoiceContainer: document.getElementById('faction-choice-container'),
   prestigeTotalBoops: document.getElementById('total-boops-value'),
@@ -392,6 +422,7 @@ function closeModal() {
 function initGame() {
   setupModals();
   loadGame();
+  initProfileUI();
   renderFactionOverlay();
   if (!gameState.currentFaction) {
     showFactionOverlay();
@@ -422,6 +453,28 @@ function attachHandlers() {
   });
 }
 
+function initProfileUI() {
+  const nameInput = document.getElementById('profile-name-input');
+  const avatarSelect = document.getElementById('profile-avatar-select');
+  const saveButton = document.getElementById('profile-save-button');
+
+  if (!nameInput || !avatarSelect || !saveButton) return;
+
+  nameInput.value = gameState.playerName || '';
+  avatarSelect.value = gameState.playerAvatar || '🧸';
+
+  saveButton.addEventListener('click', () => {
+    const newName = nameInput.value.trim() || 'Anonymous';
+    const newAvatar = avatarSelect.value || '🧸';
+
+    gameState.playerName = newName;
+    gameState.playerAvatar = newAvatar;
+
+    saveGame();
+    updateUI();
+  });
+}
+
 function loadGame() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
@@ -436,6 +489,8 @@ function loadGame() {
     gameState.critChance = BASE_CRIT_CHANCE;
     gameState.critMultiplier = typeof data.critMultiplier === 'number' ? data.critMultiplier : gameState.critMultiplier;
     gameState.lastCritValue = typeof data.lastCritValue === 'number' ? data.lastCritValue : 0;
+    gameState.playerName = typeof data.playerName === 'string' ? data.playerName : gameState.playerName;
+    gameState.playerAvatar = typeof data.playerAvatar === 'string' ? data.playerAvatar : gameState.playerAvatar;
     gameState.boopEssence = typeof data.boopEssence === 'number' ? data.boopEssence : 0;
     gameState.globalMultiplier = 1 + gameState.boopEssence * 0.02;
     gameState.bpcMultiplier = typeof data.bpcMultiplier === 'number' ? data.bpcMultiplier : 1;
@@ -443,9 +498,6 @@ function loadGame() {
     gameState.offlineEfficiency = typeof data.offlineEfficiency === 'number' ? data.offlineEfficiency : BASE_OFFLINE_EFFICIENCY;
     gameState.prestigeThreshold = typeof data.prestigeThreshold === 'number' ? data.prestigeThreshold : PRESTIGE_THRESHOLD;
     gameState.lastUpdate = typeof data.lastUpdate === 'number' ? data.lastUpdate : Date.now();
-    gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
-    gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
-    gameState.metaPerks = restoreMetaPerks(data.metaPerks);
     gameState.achievementsUnlocked = Array.isArray(data.achievementsUnlocked)
       ? Array.from(new Set(data.achievementsUnlocked))
       : [];
@@ -457,6 +509,16 @@ function loadGame() {
     gameState.unlockedSkins = Array.isArray(data.unlockedSkins)
       ? Array.from(new Set(data.unlockedSkins))
       : [];
+    const savedSkins = Array.isArray(data.skins) ? data.skins : [];
+    gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
+    gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
+    gameState.metaPerks = restoreMetaPerks(data.metaPerks);
+    gameState.skins = restoreSkins(savedSkins, gameState.unlockedSkins);
+    const savedCurrentSkinId = typeof data.currentSkinId === 'string' ? data.currentSkinId : null;
+    if (savedCurrentSkinId && gameState.skins.some((skin) => skin.id === savedCurrentSkinId)) {
+      gameState.currentSkinId = savedCurrentSkinId;
+    }
+    getCurrentSkin();
     gameState.bpcFlatBonus = typeof data.bpcFlatBonus === 'number' ? data.bpcFlatBonus : 0;
     gameState.totalClicks = Number(data.totalClicks) || 0;
     gameState.totalCrits = Number(data.totalCrits) || 0;
@@ -502,6 +564,10 @@ function saveGame() {
     bpcUpgrades: gameState.bpcUpgrades,
     autoBoopers: gameState.autoBoopers,
     metaPerks: gameState.metaPerks,
+    skins: gameState.skins,
+    currentSkinId: gameState.currentSkinId,
+    playerName: gameState.playerName,
+    playerAvatar: gameState.playerAvatar,
     achievementsUnlocked: gameState.achievementsUnlocked,
     unlockedSkins: gameState.unlockedSkins,
     currentFaction: gameState.currentFaction,
@@ -551,6 +617,59 @@ function restoreMetaPerks(savedList) {
       purchased: saved?.purchased ?? false,
     };
   });
+}
+
+function restoreSkins(savedList, unlockedSkins) {
+  const unlockedSet = new Set(unlockedSkins || []);
+  return skinsConfig.map((skin) => {
+    const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === skin.id) : null;
+    const owned = (saved?.owned ?? skin.owned) || unlockedSet.has(skin.id);
+    const boops = typeof saved?.boops === 'number' ? saved.boops : 0;
+    return {
+      ...skin,
+      owned,
+      boops,
+    };
+  });
+}
+
+function getSkinById(id) {
+  if (!id) return null;
+  return gameState.skins.find((skin) => skin.id === id) || null;
+}
+
+function getFirstOwnedSkin() {
+  return gameState.skins.find((skin) => skin.owned) || null;
+}
+
+function getCurrentSkin() {
+  const selected = getSkinById(gameState.currentSkinId);
+  if (selected && selected.owned) {
+    return selected;
+  }
+  const fallback = getFirstOwnedSkin();
+  if (fallback) {
+    gameState.currentSkinId = fallback.id;
+    return fallback;
+  }
+  return null;
+}
+
+function getMostBoopedSkin() {
+  if (!Array.isArray(gameState.skins) || gameState.skins.length === 0) {
+    return null;
+  }
+  let best = null;
+  gameState.skins.forEach((skin) => {
+    const count = skin.boops || 0;
+    if (!best || count > (best.boops || 0)) {
+      best = skin;
+    }
+  });
+  if (best && (best.boops || 0) > 0) {
+    return best;
+  }
+  return null;
 }
 
 function recalculateProductionStats() {
@@ -642,6 +761,10 @@ function applyAchievementReward(achievement) {
       }
       if (!gameState.unlockedSkins.includes(reward.skinId)) {
         gameState.unlockedSkins.push(reward.skinId);
+      }
+      const ownedSkin = getSkinById(reward.skinId);
+      if (ownedSkin) {
+        ownedSkin.owned = true;
       }
       break;
     default:
@@ -744,6 +867,9 @@ function updateUI() {
   if (ui.metaBeValue) {
     ui.metaBeValue.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
   }
+
+  updateProfileUI();
+  updateSkinStatsUI();
 
   updateStoreUI();
   updatePrestigeUI();
@@ -1031,6 +1157,32 @@ function renderFactions() {
   }
 }
 
+function updateProfileUI() {
+  if (ui.profileName) {
+    ui.profileName.textContent = gameState.playerName || 'Anonymous';
+  }
+  if (ui.profileAvatar) {
+    ui.profileAvatar.textContent = gameState.playerAvatar || '🧸';
+  }
+}
+
+function updateSkinStatsUI() {
+  const currentSkin = getCurrentSkin();
+  if (ui.currentSkinBoops) {
+    ui.currentSkinBoops.textContent = currentSkin ? currentSkin.boops || 0 : 0;
+  }
+  const topSkin = getMostBoopedSkin();
+  if (ui.topSkinName && ui.topSkinBoops) {
+    if (topSkin) {
+      ui.topSkinName.textContent = topSkin.name;
+      ui.topSkinBoops.textContent = topSkin.boops || 0;
+    } else {
+      ui.topSkinName.textContent = 'None';
+      ui.topSkinBoops.textContent = 0;
+    }
+  }
+}
+
 function updateStatsUI() {
   if (ui.statsTotalClicks) {
     ui.statsTotalClicks.textContent = numberFormatter.format(gameState.totalClicks);
@@ -1120,6 +1272,10 @@ function doBoop() {
   }
 
   const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
+  const currentSkin = getCurrentSkin();
+  if (currentSkin) {
+    currentSkin.boops = (currentSkin.boops || 0) + 1;
+  }
   spawnBoopFloat(appliedGain);
   animateBoopButton();
   playSfx(isCrit ? 'crit' : 'boop');

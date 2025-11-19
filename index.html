@@ -18,6 +18,35 @@
       <main id="main-column">
         <h1 id="game-title">Boopclicker</h1>
 
+        <section id="profile-section" aria-label="Profil gracza">
+          <h2>Player Profile</h2>
+          <div id="profile-display">
+            <span id="profile-avatar" aria-hidden="true">🧸</span>
+            <span id="profile-name">Anonymous</span>
+          </div>
+          <div id="profile-edit">
+            <input type="text" id="profile-name-input" placeholder="Your nick" aria-label="Player nickname" />
+            <select id="profile-avatar-select" aria-label="Player avatar">
+              <option value="🧸">🧸 Bear</option>
+              <option value="🦊">🦊 Fox</option>
+              <option value="🐺">🐺 Wolf</option>
+              <option value="🐉">🐉 Dragon</option>
+              <option value="🐱">🐱 Cat</option>
+            </select>
+            <button id="profile-save-button" type="button">Save</button>
+          </div>
+        </section>
+
+        <section id="skin-stats-section" aria-label="Skin statistics">
+          <h2>Skin Stats</h2>
+          <p>Current skin boops: <span id="current-skin-boops">0</span></p>
+          <p>
+            Most booped skin:
+            <span id="top-skin-name">None</span>
+            (<span id="top-skin-boops">0</span> boops)
+          </p>
+        </section>
+
         <section id="top-stats-bar" aria-live="polite">
           <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
           <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
