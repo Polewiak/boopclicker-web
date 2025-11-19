@@ -2,9 +2,14 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: auto;
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
   background: #111111;
   color: #f5f5f5;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
@@ -23,15 +28,22 @@ button {
   font-size: 1rem;
 }
 
+/* Layout cleanup: #app-container now owns the three-column grid without forced heights. */
 #app-container {
   display: grid;
-  grid-template-columns: 60px 320px minmax(0, 1fr) 340px;
+  grid-template-columns: 60px 1fr 1.2fr 1fr;
   gap: 16px;
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 1200px;
+  margin: 24px auto;
   padding: 20px;
-  min-height: 100vh;
   box-sizing: border-box;
+  align-items: flex-start;
+}
+
+#left-column,
+#main-column,
+#shop-column {
+  align-self: flex-start;
 }
 
 #side-menu {
@@ -72,7 +84,7 @@ button {
 }
 
 #left-column section {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   padding: 10px;
   background-color: #181818;
   border-radius: 8px;
@@ -89,18 +101,18 @@ button {
   align-items: center;
   gap: 16px;
   position: relative;
-  min-height: 100vh;
 }
 
 #boop-container {
+  width: 100%;
+}
+
+#boop-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 80vh;
-  width: 100%;
   gap: 12px;
+  padding: 16px 0 24px;
 }
 
 #game-title {
@@ -401,8 +413,6 @@ button {
   padding: 12px;
   border-radius: 12px;
   border: 1px solid #333;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;

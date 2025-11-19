@@ -83,30 +83,32 @@
 
       <main id="main-column">
         <div id="boop-container">
-          <h1 id="game-title">Boopclicker</h1>
+          <div id="boop-panel">
+            <h1 id="game-title">Boopclicker</h1>
 
-          <section id="top-stats-bar" aria-live="polite">
-            <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
-            <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
-            <div class="top-stat">BPS: <span id="ts-bps">0</span></div>
-            <div class="top-stat">Total: <span id="ts-total-boops">0</span></div>
-            <div class="top-stat">BE: <span id="ts-boop-essence">0</span></div>
-          </section>
+            <section id="top-stats-bar" aria-live="polite">
+              <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
+              <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
+              <div class="top-stat">BPS: <span id="ts-bps">0</span></div>
+              <div class="top-stat">Total: <span id="ts-total-boops">0</span></div>
+              <div class="top-stat">BE: <span id="ts-boop-essence">0</span></div>
+            </section>
 
-          <p id="subtitle">Najbardziej miękka gra clickerowa z kotami w tle.</p>
+            <p id="subtitle">Najbardziej miękka gra clickerowa z kotami w tle.</p>
 
-          <section id="center-summary" aria-live="polite">
-            <div class="summary-line">Crit chance: <span id="critChance">3%</span></div>
-            <div class="summary-line">Crit multiplier: <span id="critMultiplier">×7</span></div>
-          </section>
+            <section id="center-summary" aria-live="polite">
+              <div class="summary-line">Crit chance: <span id="critChance">3%</span></div>
+              <div class="summary-line">Crit multiplier: <span id="critMultiplier">×7</span></div>
+            </section>
 
-          <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
-            Witaj ponownie! Obliczam progres offline...
-          </p>
+            <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
+              Witaj ponownie! Obliczam progres offline...
+            </p>
 
-          <div class="boop-panel">
-            <button id="boop-button" aria-label="Kliknij, aby boopnąć">BOOP</button>
-            <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
+            <div class="boop-panel">
+              <button id="boop-button" aria-label="Kliknij, aby boopnąć">BOOP</button>
+              <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
+            </div>
           </div>
         </div>
 
