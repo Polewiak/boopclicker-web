@@ -117,23 +117,23 @@ const factionConfig = [
   {
     id: 'fox',
     name: 'Fox Clan',
-    description: '+5% Critical Chance.',
+    description: '+2% Critical Chance.',
     bonusType: 'crit',
-    bonusValue: 0.05,
+    bonusValue: 0.02,
   },
   {
     id: 'wolf',
     name: 'Wolf Pack',
-    description: '+5% BPS.',
+    description: '+2% BPS.',
     bonusType: 'bps',
-    bonusValue: 0.05,
+    bonusValue: 0.02,
   },
   {
     id: 'dragon',
     name: 'Dragon Brood',
-    description: '+5% BPC.',
+    description: '+2% BPC.',
     bonusType: 'bpc',
-    bonusValue: 0.05,
+    bonusValue: 0.02,
   },
 ];
 
@@ -216,6 +216,7 @@ let offlineNoticeTimeout = null;
 let passiveGainRemainder = 0;
 let storeNeedsRender = true;
 let lastUnlockedClickCount = 0;
+let factionOverlayRendered = false;
 
 const ui = {
   topBoops: document.getElementById('ts-boops'),
@@ -247,6 +248,8 @@ const ui = {
   achievementToast: document.getElementById('achievement-toast'),
   debugAddBoopsButton: document.getElementById('debug-add-boops'),
   debugResetButton: document.getElementById('debug-reset'),
+  factionOverlay: document.getElementById('faction-overlay'),
+  factionOverlayChoices: document.getElementById('faction-overlay-choices'),
 };
 
 const storeTooltip = {
@@ -389,6 +392,12 @@ function closeModal() {
 function initGame() {
   setupModals();
   loadGame();
+  renderFactionOverlay();
+  if (!gameState.currentFaction) {
+    showFactionOverlay();
+  } else {
+    hideFactionOverlay();
+  }
   attachHandlers();
   markStoreDirty();
   updateUI();
@@ -649,17 +658,11 @@ function applyFactionBonusById(factionId) {
   }
 }
 
-function canChangeFaction() {
-  return Math.floor(gameState.boops) === 0;
-}
-
 function chooseFaction(id) {
-  if (!canChangeFaction()) {
-    return;
-  }
   applyFactionBonusById(id);
   saveGame();
   updateUI();
+  hideFactionOverlay();
 }
 
 function getFinalBpc() {
@@ -708,6 +711,12 @@ function updateUI() {
   const formattedTotal = numberFormatter.format(Math.floor(gameState.totalBoops));
   const formattedBpc = numberFormatter.format(Math.round(finalBpc * 100) / 100);
   const formattedBps = numberFormatter.format(Math.round(finalBps * 100) / 100);
+
+  if (!gameState.currentFaction) {
+    showFactionOverlay();
+  } else {
+    hideFactionOverlay();
+  }
 
   if (ui.topBoops) {
     ui.topBoops.textContent = formattedBoops;
@@ -1007,30 +1016,19 @@ function renderMetaPerks() {
 function renderFactions() {
   const currentEl = ui.factionCurrent;
   const container = ui.factionChoiceContainer;
-  if (!currentEl || !container) return;
+  if (!currentEl) return;
 
   const activeFaction = gameState.factions.find((item) => item.id === gameState.currentFaction);
   currentEl.textContent = activeFaction
     ? `${activeFaction.name} — ${activeFaction.description}`
     : 'Brak wybranego totemu.';
 
-  container.innerHTML = '';
-  const fragment = document.createDocumentFragment();
-  const canPick = canChangeFaction();
-
-  gameState.factions.forEach((faction) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = `${faction.name} – ${faction.description}`;
-    button.disabled = !canPick;
-    if (faction.id === gameState.currentFaction) {
-      button.classList.add('selected');
-    }
-    button.addEventListener('click', () => chooseFaction(faction.id));
-    fragment.appendChild(button);
-  });
-
-  container.appendChild(fragment);
+  if (container) {
+    container.innerHTML = '';
+    const note = document.createElement('p');
+    note.textContent = 'You can change your faction after the next Prestige.';
+    container.appendChild(note);
+  }
 }
 
 function updateStatsUI() {
@@ -1372,9 +1370,46 @@ function resetProgressForPrestige() {
   gameState.bpcUpgrades = bpcUpgradesConfig.map((upgrade) => ({ ...upgrade }));
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.lastUpdate = Date.now();
-  applyFactionBonusById(gameState.currentFaction);
+  applyFactionBonusById(null);
+  showFactionOverlay();
+  renderFactionOverlay();
   markStoreDirty();
   // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
+}
+
+function renderFactionOverlay() {
+  const overlay = ui.factionOverlay;
+  const container = ui.factionOverlayChoices;
+  if (!overlay || !container) return;
+
+  container.innerHTML = '';
+
+  gameState.factions.forEach((faction) => {
+    const button = document.createElement('button');
+    button.className = 'faction-overlay-button';
+    button.innerHTML = `<strong>${faction.name}</strong><span>${faction.description}</span>`;
+    button.addEventListener('click', () => {
+      chooseFaction(faction.id);
+      hideFactionOverlay();
+    });
+    container.appendChild(button);
+  });
+  factionOverlayRendered = true;
+}
+
+function showFactionOverlay() {
+  const overlay = ui.factionOverlay;
+  if (!overlay) return;
+  if (!factionOverlayRendered) {
+    renderFactionOverlay();
+  }
+  overlay.classList.remove('hidden');
+}
+
+function hideFactionOverlay() {
+  const overlay = ui.factionOverlay;
+  if (!overlay) return;
+  overlay.classList.add('hidden');
 }
 
 initGame();
