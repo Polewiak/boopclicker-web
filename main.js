@@ -492,20 +492,16 @@ function attachHandlers() {
 
 function initProfileUI() {
   const nameInput = document.getElementById('profile-name-input');
-  const avatarSelect = document.getElementById('profile-avatar-select');
   const saveButton = document.getElementById('profile-save-button');
 
-  if (!nameInput || !avatarSelect || !saveButton) return;
+  if (!nameInput || !saveButton) return;
 
   nameInput.value = gameState.playerName || '';
-  avatarSelect.value = gameState.playerAvatar || '🧸';
 
   saveButton.addEventListener('click', () => {
     const newName = nameInput.value.trim() || 'Anonymous';
-    const newAvatar = avatarSelect.value || '🧸';
 
     gameState.playerName = newName;
-    gameState.playerAvatar = newAvatar;
 
     saveGame();
     updateUI();
@@ -587,6 +583,7 @@ function loadGame() {
 
   recalculateProductionStats();
   applyOfflineProgress();
+  syncAvatarWithSkin();
   checkAchievements();
   updateHighscores();
   markStoreDirty();
@@ -702,6 +699,13 @@ function getCurrentSkin() {
     return fallback;
   }
   return null;
+}
+
+function syncAvatarWithSkin() {
+  const current = getCurrentSkin();
+  if (current?.avatar) {
+    gameState.playerAvatar = current.avatar;
+  }
 }
 
 function getMostBoopedSkin() {
@@ -1304,6 +1308,7 @@ function buySkinWithBoops(id) {
   if (!gameState.currentSkinId || !getCurrentSkin()) {
     gameState.currentSkinId = skin.id;
   }
+  syncAvatarWithSkin();
   updateSkinHighscores();
   saveGame();
   updateUI();
@@ -1313,6 +1318,7 @@ function equipSkin(id) {
   const skin = getSkinById(id);
   if (!skin || !skin.owned) return;
   gameState.currentSkinId = skin.id;
+  syncAvatarWithSkin();
   saveGame();
   updateUI();
 }
@@ -1339,6 +1345,7 @@ function unlockSkinWithCode(code) {
     if (!gameState.currentSkinId) {
       gameState.currentSkinId = skin.id;
     }
+    syncAvatarWithSkin();
     saveGame();
     renderSkinsShop();
     if (messageEl) messageEl.textContent = `${skin.name} unlocked!`;
@@ -1684,7 +1691,10 @@ function announceOfflineGain(gain, seconds) {
 
 function showCritPopup(value) {
   if (!ui.critPopup) return;
+  const { randX, randY } = getRandomBoopOffsets();
   ui.critPopup.textContent = `CRITICAL BOOP! +${numberFormatter.format(Math.floor(value))}`;
+  ui.critPopup.style.setProperty('--crit-x', `${randX}px`);
+  ui.critPopup.style.setProperty('--crit-y', `${randY}px`);
   ui.critPopup.classList.remove('show');
   void ui.critPopup.offsetWidth;
   ui.critPopup.classList.add('show');
@@ -1700,13 +1710,24 @@ function animateBoopButton() {
 function spawnBoopFloat(amount) {
   const container = ui.boopFloatContainer;
   if (!container || amount <= 0) return;
+  const { randX, randY } = getRandomBoopOffsets();
   const bubble = document.createElement('div');
   bubble.className = 'boop-float';
+  bubble.style.setProperty('--float-x', `${randX}px`);
+  bubble.style.setProperty('--float-y', `${randY}px`);
   bubble.textContent = `+${numberFormatter.format(Math.floor(amount))}`;
   container.appendChild(bubble);
   setTimeout(() => {
     bubble.remove();
   }, 800);
+}
+
+function getRandomBoopOffsets() {
+  if (!ui.boopButton) return { randX: 0, randY: 0 };
+  const rect = ui.boopButton.getBoundingClientRect();
+  const randX = Math.random() * rect.width - rect.width / 2;
+  const randY = Math.random() * rect.height - rect.height / 2;
+  return { randX, randY };
 }
 
 function flashStoreRow(id) {
