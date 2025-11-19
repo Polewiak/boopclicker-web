@@ -9,6 +9,17 @@ const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 
+function formatNumber(value) {
+  if (!gameState?.settings?.shortNumbers) {
+    return numberFormatter.format(value);
+  }
+  const abs = Math.abs(value);
+  if (abs >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+  return numberFormatter.format(value);
+}
+
 const bpcUpgradesConfig = [
   {
     id: 'energetic_ear_flicker',
@@ -259,6 +270,11 @@ const gameState = {
   unlockedSkins: [],
   boopers: [],
   skinHighscores: [],
+  settings: {
+    soundEnabled: true,
+    particlesEnabled: true,
+    shortNumbers: true,
+  },
   totalClicks: 0,
   totalCrits: 0,
   totalPrestiges: 0,
@@ -317,6 +333,12 @@ const ui = {
   debugResetButton: document.getElementById('debug-reset'),
   factionOverlay: document.getElementById('faction-overlay'),
   factionOverlayChoices: document.getElementById('faction-overlay-choices'),
+  shareText: document.getElementById('share-text'),
+  shareCopyButton: document.getElementById('share-copy-button'),
+  shareStatus: document.getElementById('share-status'),
+  settingsSound: document.getElementById('settings-sound'),
+  settingsParticles: document.getElementById('settings-particles'),
+  settingsShortNumbers: document.getElementById('settings-shortnumbers'),
 };
 
 const storeTooltip = {
@@ -333,6 +355,7 @@ const sfx = {
 };
 
 function playSfx(name) {
+  if (!gameState.settings?.soundEnabled) return;
   const audio = sfx[name];
   if (!audio) return;
   audio.currentTime = 0;
@@ -395,11 +418,11 @@ function refreshStoreRowAffordability() {
         canAfford = gameState.boops >= booper.currentCost;
         const ownedEl = row.querySelector('.store-sub');
         if (ownedEl) {
-          ownedEl.textContent = `Owned: ${numberFormatter.format(booper.level)}`;
+          ownedEl.textContent = `Owned: ${formatNumber(booper.level)}`;
         }
         const costEl = row.querySelector('.store-cost');
         if (costEl) {
-          costEl.textContent = `${numberFormatter.format(booper.currentCost)} boops`;
+          costEl.textContent = `${formatNumber(booper.currentCost)} boops`;
         }
       }
     }
@@ -509,7 +532,10 @@ function closeModal() {
 function initGame() {
   setupModals();
   loadGame();
+  initSfx();
   initProfileUI();
+  initSettingsUI();
+  initShareUI();
   renderFactionOverlay();
   if (!gameState.currentFaction) {
     showFactionOverlay();
@@ -523,6 +549,12 @@ function initGame() {
     clearInterval(intervalId);
   }
   intervalId = setInterval(gameLoop, LOOP_INTERVAL_MS);
+}
+
+function initSfx() {
+  sfx.boop = document.getElementById('sfx-boop');
+  sfx.crit = document.getElementById('sfx-crit');
+  sfx.buy = document.getElementById('sfx-prestige');
 }
 
 function attachHandlers() {
@@ -565,6 +597,31 @@ function initProfileUI() {
   });
 }
 
+function initSettingsUI() {
+  const soundInput = ui.settingsSound;
+  const particlesInput = ui.settingsParticles;
+  const shortNumbersInput = ui.settingsShortNumbers;
+  if (!soundInput || !particlesInput || !shortNumbersInput) return;
+
+  soundInput.checked = !!gameState.settings.soundEnabled;
+  particlesInput.checked = !!gameState.settings.particlesEnabled;
+  shortNumbersInput.checked = !!gameState.settings.shortNumbers;
+
+  soundInput.addEventListener('change', () => {
+    gameState.settings.soundEnabled = soundInput.checked;
+    saveGame();
+  });
+  particlesInput.addEventListener('change', () => {
+    gameState.settings.particlesEnabled = particlesInput.checked;
+    saveGame();
+  });
+  shortNumbersInput.addEventListener('change', () => {
+    gameState.settings.shortNumbers = shortNumbersInput.checked;
+    saveGame();
+    updateUI();
+  });
+}
+
 function loadGame() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
@@ -601,6 +658,12 @@ function loadGame() {
       : [];
     gameState.boopers = Array.isArray(data.boopers) ? data.boopers : [];
     gameState.skinHighscores = Array.isArray(data.skinHighscores) ? data.skinHighscores : [];
+    gameState.settings = {
+      soundEnabled: true,
+      particlesEnabled: true,
+      shortNumbers: true,
+      ...(typeof data.settings === 'object' ? data.settings : {}),
+    };
     const savedSkins = Array.isArray(data.skins) ? data.skins : [];
     gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
     gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
@@ -682,6 +745,7 @@ function saveGame() {
     totalPrestiges: gameState.totalPrestiges,
     totalAutoBoopers: gameState.totalAutoBoopers,
     lastUpdate: gameState.lastUpdate || Date.now(),
+    settings: gameState.settings,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
@@ -942,10 +1006,10 @@ function applyOfflineProgress() {
 function updateUI() {
   const finalBpc = getFinalBpc();
   const finalBps = getFinalBps();
-  const formattedBoops = numberFormatter.format(Math.floor(gameState.boops));
-  const formattedTotal = numberFormatter.format(Math.floor(gameState.totalBoops));
-  const formattedBpc = numberFormatter.format(Math.round(finalBpc * 100) / 100);
-  const formattedBps = numberFormatter.format(Math.round(finalBps * 100) / 100);
+  const formattedBoops = formatNumber(Math.floor(gameState.boops));
+  const formattedTotal = formatNumber(Math.floor(gameState.totalBoops));
+  const formattedBpc = formatNumber(Math.round(finalBpc * 100) / 100);
+  const formattedBps = formatNumber(Math.round(finalBps * 100) / 100);
 
   if (!gameState.currentFaction) {
     showFactionOverlay();
@@ -966,24 +1030,25 @@ function updateUI() {
     ui.topBps.textContent = formattedBps;
   }
   if (ui.topEssence) {
-    ui.topEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
+    ui.topEssence.textContent = formatNumber(Math.floor(gameState.boopEssence));
   }
 
   if (ui.critChance) {
     ui.critChance.textContent = formatCritChance(getEffectiveCritChance());
   }
   if (ui.critMultiplier) {
-    ui.critMultiplier.textContent = `×${numberFormatter.format(gameState.critMultiplier)}`;
+    ui.critMultiplier.textContent = `×${formatNumber(gameState.critMultiplier)}`;
   }
 
   if (ui.metaBeValue) {
-    ui.metaBeValue.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
+    ui.metaBeValue.textContent = formatNumber(Math.floor(gameState.boopEssence));
   }
 
   updateProfileUI();
   updateSkinStatsUI();
   renderSkinsShop();
   renderHighscores();
+  updateShareText();
 
   updateStoreUI();
   updatePrestigeUI();
@@ -995,16 +1060,16 @@ function updateUI() {
 
 function updatePrestigeUI() {
   if (ui.prestigeTotalBoops) {
-    ui.prestigeTotalBoops.textContent = numberFormatter.format(Math.floor(gameState.totalBoops));
+    ui.prestigeTotalBoops.textContent = formatNumber(Math.floor(gameState.totalBoops));
   }
   if (ui.boopEssence) {
-    ui.boopEssence.textContent = numberFormatter.format(Math.floor(gameState.boopEssence));
+    ui.boopEssence.textContent = formatNumber(Math.floor(gameState.boopEssence));
   }
   if (ui.globalMultiplier) {
     ui.globalMultiplier.textContent = gameState.globalMultiplier.toFixed(2);
   }
   if (ui.prestigeGain) {
-    ui.prestigeGain.textContent = numberFormatter.format(calculatePrestigeGain());
+    ui.prestigeGain.textContent = formatNumber(calculatePrestigeGain());
   }
   if (ui.prestigeButton) {
     ui.prestigeButton.disabled = calculatePrestigeGain() <= 0;
@@ -1149,14 +1214,14 @@ function renderBpcUpgrades() {
       subLabel: upgrade.purchased ? 'Purchased' : 'Unlocked',
       costLabel: upgrade.purchased
         ? 'Purchased'
-        : `${numberFormatter.format(upgrade.cost)} boops`,
+        : `${formatNumber(upgrade.cost)} boops`,
       dataset: { id: upgrade.id, type: 'click' },
       affordable: canAfford,
       disabled: upgrade.purchased,
       tooltipData: {
         name: upgrade.name,
         description: upgrade.description,
-        extra: `+${numberFormatter.format(upgrade.bonusBpc)} BPC`,
+        extra: `+${formatNumber(upgrade.bonusBpc)} BPC`,
       },
     });
     fragment.appendChild(row);
@@ -1172,7 +1237,7 @@ function renderBpcUpgrades() {
     lockedWrapper.appendChild(lockedTitle);
     locked.forEach((upgrade) => {
       const item = document.createElement('p');
-      const threshold = numberFormatter.format(upgrade.unlockAt ?? upgrade.cost);
+      const threshold = formatNumber(upgrade.unlockAt ?? upgrade.cost);
       item.textContent = `${upgrade.name} – ${threshold} total boops`;
       lockedWrapper.appendChild(item);
     });
@@ -1191,15 +1256,15 @@ function renderAutoBoopers() {
     const row = createStoreRow({
       icon: '🏭',
       name: booper.name,
-      subLabel: `Owned: ${numberFormatter.format(booper.level)}`,
-      costLabel: `${numberFormatter.format(booper.currentCost)} boops`,
+      subLabel: `Owned: ${formatNumber(booper.level)}`,
+      costLabel: `${formatNumber(booper.currentCost)} boops`,
       dataset: { id: booper.id, type: 'auto' },
       affordable: canAfford,
       disabled: false,
       tooltipData: {
         name: booper.name,
         description: booper.description,
-        extra: `+${numberFormatter.format(booper.bonusBpsPerLevel)} BPS / lvl`,
+        extra: `+${formatNumber(booper.bonusBpsPerLevel)} BPS / lvl`,
       },
     });
     fragment.appendChild(row);
@@ -1235,7 +1300,7 @@ function renderSkinsShop() {
 
     const boopsLine = document.createElement('div');
     boopsLine.className = 'skin-boops';
-    boopsLine.textContent = `Boops: ${numberFormatter.format(skin.boops || 0)}`;
+    boopsLine.textContent = `Boops: ${formatNumber(skin.boops || 0)}`;
 
     const actions = document.createElement('div');
     actions.className = 'skin-actions';
@@ -1250,7 +1315,7 @@ function renderSkinsShop() {
     } else if (skin.unlockCost != null) {
       const buyButton = document.createElement('button');
       buyButton.type = 'button';
-      buyButton.textContent = `Buy (${numberFormatter.format(skin.unlockCost)} boops)`;
+      buyButton.textContent = `Buy (${formatNumber(skin.unlockCost)} boops)`;
       buyButton.disabled = gameState.boops < skin.unlockCost;
       buyButton.addEventListener('click', () => buySkinWithBoops(skin.id));
       actions.appendChild(buyButton);
@@ -1285,7 +1350,7 @@ function renderMetaPerks() {
     const nameEl = document.createElement('span');
     nameEl.textContent = perk.name;
     const costEl = document.createElement('span');
-    costEl.textContent = `${numberFormatter.format(perk.cost)} BE`;
+    costEl.textContent = `${formatNumber(perk.cost)} BE`;
     header.append(nameEl, costEl);
 
     const description = document.createElement('p');
@@ -1344,13 +1409,13 @@ function updateProfileUI() {
 function updateSkinStatsUI() {
   const currentSkin = getCurrentSkin();
   if (ui.currentSkinBoops) {
-    ui.currentSkinBoops.textContent = currentSkin ? numberFormatter.format(currentSkin.boops || 0) : 0;
+    ui.currentSkinBoops.textContent = currentSkin ? formatNumber(currentSkin.boops || 0) : 0;
   }
   const topSkin = getMostBoopedSkin();
   if (ui.topSkinName && ui.topSkinBoops) {
     if (topSkin) {
       ui.topSkinName.textContent = topSkin.name;
-      ui.topSkinBoops.textContent = numberFormatter.format(topSkin.boops || 0);
+      ui.topSkinBoops.textContent = formatNumber(topSkin.boops || 0);
     } else {
       ui.topSkinName.textContent = 'None';
       ui.topSkinBoops.textContent = 0;
@@ -1458,6 +1523,40 @@ function updateHighscores() {
   updateSkinHighscores();
 }
 
+function updateShareText() {
+  const shareTextEl = ui.shareText;
+  if (!shareTextEl) return;
+  const player = gameState.playerName || 'Anonymous';
+  const avatar = gameState.playerAvatar || '🧸';
+  const total = formatNumber(Math.floor(gameState.totalBoops || 0));
+  const currentSkin = getCurrentSkin();
+  const skinName = currentSkin ? currentSkin.name : 'no skin';
+  const skinBoops = currentSkin ? formatNumber(currentSkin.boops || 0) : 0;
+  const factionId = gameState.currentFaction;
+  const faction = gameState.factions?.find((f) => f.id === factionId);
+  const factionName = faction ? faction.name : 'No faction';
+
+  const text = `${avatar} ${player} has booped ${total} times in Boopclicker!\nCurrent skin: ${skinName} (${skinBoops} boops)\nFaction: ${factionName}`;
+  shareTextEl.value = text;
+}
+
+function initShareUI() {
+  const copyBtn = ui.shareCopyButton;
+  const statusEl = ui.shareStatus;
+  if (!copyBtn || !statusEl || !ui.shareText) return;
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(ui.shareText.value);
+      statusEl.textContent = 'Copied!';
+    } catch (error) {
+      statusEl.textContent = 'Copy failed. Select the text manually.';
+    }
+    setTimeout(() => {
+      statusEl.textContent = '';
+    }, 2000);
+  });
+}
+
 function renderHighscores() {
   updateHighscores();
 
@@ -1468,7 +1567,7 @@ function renderHighscores() {
     boopersList.innerHTML = '';
     (gameState.boopers || []).forEach((entry) => {
       const li = document.createElement('li');
-      li.textContent = `${entry.avatar || ''} ${entry.name || 'Anon'} – ${numberFormatter.format(
+      li.textContent = `${entry.avatar || ''} ${entry.name || 'Anon'} – ${formatNumber(
         entry.totalBoops || 0
       )} boops`;
       boopersList.appendChild(li);
@@ -1479,7 +1578,7 @@ function renderHighscores() {
     skinsList.innerHTML = '';
     (gameState.skinHighscores || []).forEach((entry) => {
       const li = document.createElement('li');
-      li.textContent = `${entry.avatar || ''} ${entry.name || 'Skin'} – ${numberFormatter.format(
+      li.textContent = `${entry.avatar || ''} ${entry.name || 'Skin'} – ${formatNumber(
         entry.boops || 0
       )} boops`;
       skinsList.appendChild(li);
@@ -1489,13 +1588,13 @@ function renderHighscores() {
 
 function updateStatsUI() {
   if (ui.statsTotalClicks) {
-    ui.statsTotalClicks.textContent = numberFormatter.format(gameState.totalClicks);
+    ui.statsTotalClicks.textContent = formatNumber(gameState.totalClicks);
   }
   if (ui.statsTotalCrits) {
-    ui.statsTotalCrits.textContent = numberFormatter.format(gameState.totalCrits);
+    ui.statsTotalCrits.textContent = formatNumber(gameState.totalCrits);
   }
   if (ui.statsTotalPrestiges) {
-    ui.statsTotalPrestiges.textContent = numberFormatter.format(gameState.totalPrestiges);
+    ui.statsTotalPrestiges.textContent = formatNumber(gameState.totalPrestiges);
   }
 }
 
@@ -1582,6 +1681,10 @@ function doBoop() {
   }
   spawnBoopFloat(appliedGain);
   animateBoopButton();
+  if (ui.boopButton) {
+    ui.boopButton.classList.add('boop-pressed');
+    setTimeout(() => ui.boopButton.classList.remove('boop-pressed'), 80);
+  }
   playSfx(isCrit ? 'crit' : 'boop');
 
   if (isCrit) {
@@ -1735,7 +1838,7 @@ function announceOfflineGain(gain, seconds) {
     return;
   }
 
-  const roundedGain = numberFormatter.format(Math.floor(gain));
+  const roundedGain = formatNumber(Math.floor(gain));
   const efficiencyPercent = Math.round(gameState.offlineEfficiency * 100);
   ui.offlineNotice.textContent = `Byłeś offline ${seconds}s i zyskałeś ${roundedGain} boops (${efficiencyPercent}% efektywności).`;
   ui.offlineNotice.hidden = false;
@@ -1751,13 +1854,11 @@ function announceOfflineGain(gain, seconds) {
 
 function showCritPopup(value) {
   if (!ui.critPopup) return;
-  const { randX, randY } = getRandomBoopOffsets();
-  ui.critPopup.textContent = `CRITICAL BOOP! +${numberFormatter.format(Math.floor(value))}`;
-  ui.critPopup.style.setProperty('--crit-x', `${randX}px`);
-  ui.critPopup.style.setProperty('--crit-y', `${randY}px`);
+  ui.critPopup.textContent = `CRITICAL BOOP! +${formatNumber(Math.floor(value))}`;
   ui.critPopup.classList.remove('show');
   void ui.critPopup.offsetWidth;
   ui.critPopup.classList.add('show');
+  spawnFloatingText('CRITICAL BOOP!', 'crit-floating');
 }
 
 function animateBoopButton() {
@@ -1768,18 +1869,8 @@ function animateBoopButton() {
 }
 
 function spawnBoopFloat(amount) {
-  const container = ui.boopFloatContainer;
-  if (!container || amount <= 0) return;
-  const { randX, randY } = getRandomBoopOffsets();
-  const bubble = document.createElement('div');
-  bubble.className = 'boop-float';
-  bubble.style.setProperty('--float-x', `${randX}px`);
-  bubble.style.setProperty('--float-y', `${randY}px`);
-  bubble.textContent = `+${numberFormatter.format(Math.floor(amount))}`;
-  container.appendChild(bubble);
-  setTimeout(() => {
-    bubble.remove();
-  }, 800);
+  if (!gameState.settings?.particlesEnabled || amount <= 0) return;
+  spawnFloatingText(`+${formatNumber(Math.floor(amount))}`);
 }
 
 function getRandomBoopOffsets() {
@@ -1788,6 +1879,27 @@ function getRandomBoopOffsets() {
   const randX = Math.random() * rect.width - rect.width / 2;
   const randY = Math.random() * rect.height - rect.height / 2;
   return { randX, randY };
+}
+
+function spawnFloatingText(text, extraClass) {
+  if (!gameState.settings?.particlesEnabled) return;
+  const boopBtn = ui.boopButton;
+  if (!boopBtn) return;
+  const rect = boopBtn.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.className = 'floating-text';
+  if (extraClass) popup.classList.add(extraClass);
+  popup.textContent = text;
+  const randX = rect.left + rect.width * (0.2 + 0.6 * Math.random());
+  const randY = rect.top + rect.height * (0.2 + 0.6 * Math.random());
+  popup.style.left = `${randX}px`;
+  popup.style.top = `${randY}px`;
+  document.body.appendChild(popup);
+  requestAnimationFrame(() => {
+    popup.style.transform = 'translateY(-40px)';
+    popup.style.opacity = '0';
+  });
+  setTimeout(() => popup.remove(), 700);
 }
 
 function flashStoreRow(id) {
