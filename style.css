@@ -71,10 +71,12 @@ button {
   gap: 12px;
 }
 
-.left-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+#left-column section {
+  margin-bottom: 14px;
+  padding: 10px;
+  background-color: #181818;
+  border-radius: 8px;
+  border: 1px solid #333;
 }
 
 #main-column {
@@ -87,6 +89,18 @@ button {
   align-items: center;
   gap: 16px;
   position: relative;
+  min-height: 100vh;
+}
+
+#boop-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 80vh;
+  width: 100%;
+  gap: 12px;
 }
 
 #game-title {
@@ -114,10 +128,7 @@ button {
 
 #profile-section {
   width: 100%;
-  padding: 12px;
   background: #202020;
-  border-radius: 10px;
-  border: 1px solid #333;
 }
 
 #profile-display {
@@ -159,31 +170,12 @@ button {
   color: #cfcfcf;
 }
 
-#skin-stats-section {
-  width: 100%;
-  padding: 10px 12px;
-  background: #181818;
-  border-radius: 10px;
-  border: 1px solid #333;
-  font-size: 13px;
-}
-
-#highscores-section {
-  width: 100%;
-  padding: 10px 12px;
-  background: #181818;
-  border-radius: 10px;
-  border: 1px solid #333;
-  font-size: 13px;
-}
-
+#skin-stats-section,
+#highscores-section,
 #settings-section,
-#share-section {
+#share-section,
+#achievements-panel {
   width: 100%;
-  padding: 10px 12px;
-  background: #181818;
-  border-radius: 10px;
-  border: 1px solid #333;
   font-size: 13px;
 }
 
@@ -208,6 +200,29 @@ button {
 #share-status {
   font-size: 12px;
   min-height: 16px;
+}
+
+#achievements-panel #achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#achievements-panel .achievement-row {
+  border-bottom: 1px solid #222;
+  padding: 4px 0;
+}
+
+#achievements-panel .achievement-row:last-child {
+  border-bottom: none;
+}
+
+#achievements-panel .achievement-name {
+  font-weight: 700;
+}
+
+#achievements-panel .achievement-row.unlocked .achievement-name {
+  color: #ffd95e;
 }
 
 #highscores-section h3 {
@@ -254,11 +269,10 @@ button {
   gap: 12px;
 }
 
-#boopButton,
 #boop-button {
   font-size: 28px;
   padding: 32px 80px;
-  margin-top: 24px;
+  margin-top: 12px;
   border-radius: 18px;
   border: none;
   background: #ff69b4;
@@ -266,27 +280,18 @@ button {
   cursor: pointer;
   box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  transition: transform 0.08s ease-out, box-shadow 0.1s ease-out, filter 0.1s ease-out;
+  transition: transform 0.05s ease-out, box-shadow 0.15s ease-out, filter 0.1s ease-out;
   font-weight: 700;
 }
 
-#boopButton:active,
 #boop-button:active {
   transform: scale(0.95);
 }
 
-#boopButton.boop-pressed,
-#boop-button.boop-pressed {
+#boop-button.boop-pressed,
+#boop-button.pressed {
   transform: scale(0.95);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
-}
-
-#boop-float-container {
-  position: relative;
-  width: 100%;
-  height: 160px;
-  pointer-events: none;
-  overflow: visible;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.3);
 }
 
 .floating-text {
@@ -294,6 +299,7 @@ button {
   pointer-events: none;
   color: #fff;
   font-size: 14px;
+  font-weight: bold;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
   opacity: 1;
   transform: translateY(0);
@@ -306,31 +312,6 @@ button {
   color: #ffcc44;
 }
 
-.boop-float {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  --float-x: 0px;
-  --float-y: 0px;
-  font-size: 14px;
-  color: #ffc0e0;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
-  transform: translate(-50%, -50%) translate(var(--float-x), var(--float-y));
-  animation: boop-float-up 0.8s ease-out forwards;
-}
-
-@keyframes boop-float-up {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) translate(var(--float-x), var(--float-y)) translateY(10px);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) translate(var(--float-x), var(--float-y)) translateY(-40px);
-  }
-}
-
-#boopButton.boop-anim,
 #boop-button.boop-anim {
   animation: boop-press 0.12s ease-out;
 }
@@ -924,9 +905,8 @@ button {
 
 #achievement-toast {
   position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 16px;
+  right: 16px;
   background: #222;
   padding: 12px 18px;
   border-radius: 10px;
@@ -935,12 +915,14 @@ button {
   font-size: 14px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 1200;
+  transform: translateY(8px);
 }
 
 #achievement-toast.show {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .footnote {

@@ -16,96 +16,98 @@
       </nav>
 
       <aside id="left-column" aria-label="Profil i statystyki skórek">
-        <div class="left-stack" id="left-top-stack">
-          <section id="profile-section" aria-label="Profil gracza">
-            <h2>Player Profile</h2>
-            <div id="profile-display">
-              <span id="profile-avatar" aria-hidden="true">🧸</span>
-              <span id="profile-name">Anonymous</span>
-            </div>
-            <div id="profile-edit">
-              <input type="text" id="profile-name-input" placeholder="Your nick" aria-label="Player nickname" />
-              <p class="profile-note">Avatar zmienisz, wybierając skina w Skins Shop.</p>
-              <button id="profile-save-button" type="button">Save</button>
-            </div>
-          </section>
+        <section id="profile-section" aria-label="Profil gracza">
+          <h2>Player Profile</h2>
+          <div id="profile-display">
+            <span id="profile-avatar" aria-hidden="true">🧸</span>
+            <span id="profile-name">Anonymous</span>
+          </div>
+          <div id="profile-edit">
+            <input type="text" id="profile-name-input" placeholder="Your nick" aria-label="Player nickname" />
+            <p class="profile-note">Avatar zmienisz, wybierając skina w Skins Shop.</p>
+            <button id="profile-save-button" type="button">Save</button>
+          </div>
+        </section>
 
-          <section id="skin-stats-section" aria-label="Skin statistics">
-            <h2>Skin Stats</h2>
-            <p>Current skin boops: <span id="current-skin-boops">0</span></p>
-            <p>
-              Most booped skin:
-              <span id="top-skin-name">None</span>
-              (<span id="top-skin-boops">0</span> boops)
-            </p>
-          </section>
-        </div>
+        <section id="skin-stats-section" aria-label="Skin statistics">
+          <h2>Skin Stats</h2>
+          <p>Current skin boops: <span id="current-skin-boops">0</span></p>
+          <p>
+            Most booped skin:
+            <span id="top-skin-name">None</span>
+            (<span id="top-skin-boops">0</span> boops)
+          </p>
+        </section>
 
-        <div class="left-stack" id="left-bottom-stack">
-          <section id="highscores-section" aria-label="Local highscores">
-            <h2>Highscores</h2>
-            <div>
-              <h3>Top Boopers</h3>
-              <ol id="top-boopers-list"></ol>
-            </div>
-            <div>
-              <h3>Top Skins</h3>
-              <ol id="top-skins-list"></ol>
-            </div>
-          </section>
+        <section id="achievements-panel" aria-label="Achievements overview">
+          <h2>Achievements</h2>
+          <div id="achievements-list"></div>
+        </section>
 
-          <section id="settings-section" aria-label="Settings">
-            <h2>Settings</h2>
-            <label class="settings-row">
-              <input type="checkbox" id="settings-sound" />
-              Sound effects
-            </label>
-            <label class="settings-row">
-              <input type="checkbox" id="settings-particles" />
-              Floating text / particles
-            </label>
-            <label class="settings-row">
-              <input type="checkbox" id="settings-shortnumbers" />
-              Short number format (1.2K, 3.4M)
-            </label>
-          </section>
+        <section id="highscores-section" aria-label="Local highscores">
+          <h2>Highscores</h2>
+          <div>
+            <h3>Top Boopers</h3>
+            <ol id="top-boopers-list"></ol>
+          </div>
+          <div>
+            <h3>Top Skins</h3>
+            <ol id="top-skins-list"></ol>
+          </div>
+        </section>
 
-          <section id="share-section" aria-label="Share progress">
-            <h2>Share</h2>
-            <p>Copy a small brag message:</p>
-            <textarea id="share-text" rows="3" readonly></textarea>
-            <button id="share-copy-button" type="button">Copy to clipboard</button>
-            <p id="share-status"></p>
-          </section>
-        </div>
+        <section id="settings-section" aria-label="Settings">
+          <h2>Settings</h2>
+          <label class="settings-row">
+            <input type="checkbox" id="settings-sound" />
+            Sound effects
+          </label>
+          <label class="settings-row">
+            <input type="checkbox" id="settings-particles" />
+            Floating text / particles
+          </label>
+          <label class="settings-row">
+            <input type="checkbox" id="settings-shortnumbers" />
+            Short number format (1.2K, 3.4M)
+          </label>
+        </section>
+
+        <section id="share-section" aria-label="Share progress">
+          <h2>Share</h2>
+          <p>Copy a small brag message:</p>
+          <textarea id="share-text" rows="3" readonly></textarea>
+          <button id="share-copy-button" type="button">Copy to clipboard</button>
+          <p id="share-status"></p>
+        </section>
       </aside>
 
       <main id="main-column">
-        <h1 id="game-title">Boopclicker</h1>
+        <div id="boop-container">
+          <h1 id="game-title">Boopclicker</h1>
 
-        <section id="top-stats-bar" aria-live="polite">
-          <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
-          <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
-          <div class="top-stat">BPS: <span id="ts-bps">0</span></div>
-          <div class="top-stat">Total: <span id="ts-total-boops">0</span></div>
-          <div class="top-stat">BE: <span id="ts-boop-essence">0</span></div>
-        </section>
+          <section id="top-stats-bar" aria-live="polite">
+            <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
+            <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
+            <div class="top-stat">BPS: <span id="ts-bps">0</span></div>
+            <div class="top-stat">Total: <span id="ts-total-boops">0</span></div>
+            <div class="top-stat">BE: <span id="ts-boop-essence">0</span></div>
+          </section>
 
-        <p id="subtitle">Najbardziej miękka gra clickerowa z kotami w tle.</p>
+          <p id="subtitle">Najbardziej miękka gra clickerowa z kotami w tle.</p>
 
-        <section id="center-summary" aria-live="polite">
-          <div class="summary-line">Crit chance: <span id="critChance">3%</span></div>
-          <div class="summary-line">Crit multiplier: <span id="critMultiplier">×7</span></div>
-        </section>
+          <section id="center-summary" aria-live="polite">
+            <div class="summary-line">Crit chance: <span id="critChance">3%</span></div>
+            <div class="summary-line">Crit multiplier: <span id="critMultiplier">×7</span></div>
+          </section>
 
-        <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
-          Witaj ponownie! Obliczam progres offline...
-        </p>
+          <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
+            Witaj ponownie! Obliczam progres offline...
+          </p>
 
-        <div class="boop-panel">
-          <div id="boop-float-container" aria-hidden="true"></div>
-          <button id="boopButton" aria-label="Kliknij, aby boopnąć">BOOP</button>
-          <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
+          <div class="boop-panel">
+            <button id="boop-button" aria-label="Kliknij, aby boopnąć">BOOP</button>
+            <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
+          </div>
         </div>
 
         <section id="debug-section" aria-label="Debug tools">

@@ -24,9 +24,9 @@ const bpcUpgradesConfig = [
   {
     id: 'energetic_ear_flicker',
     name: 'Energetic Ear Flicker',
-    description: 'Szybkie potrząśnięcie uszami daje +5 BPC.',
+    description: 'Szybkie potrząśnięcie uszami zwiększa BPC o 20%.',
     cost: 100,
-    bonusBpc: 5,
+    bpcMultiplierBonus: 0.2,
     unlockAt: 100,
     purchased: false,
     wasAffordable: false,
@@ -34,9 +34,9 @@ const bpcUpgradesConfig = [
   {
     id: 'boy_bopper',
     name: 'Boy Bopper',
-    description: 'Mocniejsze boopy od uroczych chłopów. +20 BPC.',
+    description: 'Mocniejsze boopy od uroczych chłopów. +50% BPC.',
     cost: 500,
-    bonusBpc: 20,
+    bpcMultiplierBonus: 0.5,
     unlockAt: 500,
     purchased: false,
     wasAffordable: false,
@@ -44,9 +44,9 @@ const bpcUpgradesConfig = [
   {
     id: 'himbo_hooters',
     name: 'Himbo Hooters',
-    description: 'Drużyna himbo trenuje łapki. +80 BPC.',
+    description: 'Drużyna himbo trenuje łapki. +100% BPC.',
     cost: 2000,
-    bonusBpc: 80,
+    bpcMultiplierBonus: 1,
     unlockAt: 2000,
     purchased: false,
     wasAffordable: false,
@@ -57,45 +57,41 @@ const autoBoopersConfig = [
   {
     id: 'feral_toaster',
     name: 'Feral Toaster',
-    description: 'Dzikie tostery wypiekają boopy. +1 BPS/poziom.',
-    level: 0,
-    baseCost: 50,
-    currentCost: 50,
-    scale: 1.17,
-    bonusBpsPerLevel: 1,
+    description: 'Dzikie tostery wypiekają boopy. +0.5 BPS na sztukę.',
+    owned: 0,
+    baseCost: 60,
+    costGrowth: 1.15,
+    baseBps: 0.5,
     wasAffordable: false,
   },
   {
     id: 'overworked_fox_intern',
     name: 'Overworked Fox Intern',
-    description: 'Przemęczony lis dodaje +8 BPS na poziom.',
-    level: 0,
+    description: 'Przemęczony lis dodaje +3 BPS na sztukę.',
+    owned: 0,
     baseCost: 300,
-    currentCost: 300,
-    scale: 1.18,
-    bonusBpsPerLevel: 8,
+    costGrowth: 1.15,
+    baseBps: 3,
     wasAffordable: false,
   },
   {
     id: 'wolfgirl_call_center',
     name: 'Wolfgirl Call Center',
-    description: 'Oddział wilczyc generuje +45 BPS/poziom.',
-    level: 0,
+    description: 'Oddział wilczyc generuje +20 BPS na sztukę.',
+    owned: 0,
     baseCost: 2000,
-    currentCost: 2000,
-    scale: 1.18,
-    bonusBpsPerLevel: 45,
+    costGrowth: 1.15,
+    baseBps: 20,
     wasAffordable: false,
   },
   {
     id: 'boomerang_otter_crew',
     name: 'Boomerang Otter Crew',
-    description: 'Wydry na boomerangach dodają +250 BPS/poziom.',
-    level: 0,
+    description: 'Wydry na boomerangach dodają +120 BPS na sztukę.',
+    owned: 0,
     baseCost: 12000,
-    currentCost: 12000,
-    scale: 1.19,
-    bonusBpsPerLevel: 250,
+    costGrowth: 1.15,
+    baseBps: 120,
     wasAffordable: false,
   },
 ];
@@ -245,7 +241,9 @@ const gameState = {
   boops: 0,
   totalBoops: 0,
   bpc: BASE_BPC,
+  bpcBase: BASE_BPC,
   bps: BASE_BPS,
+  bpsBase: BASE_BPS,
   critChance: BASE_CRIT_CHANCE,
   critMultiplier: 7,
   lastCritValue: 0,
@@ -298,8 +296,7 @@ const ui = {
   topEssence: document.getElementById('ts-boop-essence'),
   critChance: document.getElementById('critChance'),
   critMultiplier: document.getElementById('critMultiplier'),
-  boopButton: document.getElementById('boopButton'),
-  boopFloatContainer: document.getElementById('boop-float-container'),
+  boopButton: document.getElementById('boop-button'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesContainer: document.getElementById('click-upgrades-container'),
@@ -328,6 +325,7 @@ const ui = {
   statsTotalCrits: document.getElementById('stats-total-crits'),
   statsTotalPrestiges: document.getElementById('stats-total-prestiges'),
   achievementsGrid: document.getElementById('achievements-grid'),
+  achievementsList: document.getElementById('achievements-list'),
   achievementToast: document.getElementById('achievement-toast'),
   debugAddBoopsButton: document.getElementById('debug-add-boops'),
   debugResetButton: document.getElementById('debug-reset'),
@@ -415,14 +413,15 @@ function refreshStoreRowAffordability() {
     } else if (type === 'auto') {
       const booper = gameState.autoBoopers.find((item) => item.id === id);
       if (booper) {
-        canAfford = gameState.boops >= booper.currentCost;
+        const nextCost = getAutoBooperCost(booper);
+        canAfford = gameState.boops >= nextCost;
         const ownedEl = row.querySelector('.store-sub');
         if (ownedEl) {
-          ownedEl.textContent = `Owned: ${formatNumber(booper.level)}`;
+          ownedEl.textContent = `Owned: ${formatNumber(booper.owned || 0)}`;
         }
         const costEl = row.querySelector('.store-cost');
         if (costEl) {
-          costEl.textContent = `${formatNumber(booper.currentCost)} boops`;
+          costEl.textContent = `${formatNumber(nextCost)} boops`;
         }
       }
     }
@@ -463,7 +462,7 @@ function updateUpgradeCardVisuals() {
     const card = document.getElementById(`${booper.id}-card`);
     if (!card) return;
 
-    const affordable = gameState.boops >= booper.currentCost;
+    const affordable = gameState.boops >= getAutoBooperCost(booper);
     card.classList.remove('upgrade-available', 'upgrade-unaffordable');
 
     if (affordable) {
@@ -681,7 +680,7 @@ function loadGame() {
     gameState.totalAutoBoopers = Number(data.totalAutoBoopers) || 0;
     if (data.totalAutoBoopers == null) {
       gameState.totalAutoBoopers = gameState.autoBoopers.reduce(
-        (sum, booper) => sum + (booper.level || 0),
+        (sum, booper) => sum + (booper.owned || 0),
         0
       );
     }
@@ -766,8 +765,10 @@ function restoreAutoBoopers(savedList) {
     const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === booper.id) : null;
     return {
       ...booper,
-      level: saved?.level ?? 0,
-      currentCost: saved?.currentCost ?? booper.baseCost,
+      owned: saved?.owned ?? saved?.level ?? 0,
+      baseCost: saved?.baseCost ?? booper.baseCost,
+      costGrowth: saved?.costGrowth ?? saved?.scale ?? booper.costGrowth ?? 1.15,
+      baseBps: saved?.baseBps ?? booper.baseBps ?? 0,
       wasAffordable: saved?.wasAffordable ?? false,
     };
   });
@@ -800,6 +801,17 @@ function restoreSkins(savedList, unlockedSkins) {
       unlockCode: saved?.unlockCode ?? skin.unlockCode ?? null,
     };
   });
+}
+
+function getAutoBooperCost(auto) {
+  const growth = auto.costGrowth ?? 1.15;
+  const owned = auto.owned ?? 0;
+  return Math.floor((auto.baseCost ?? 0) * Math.pow(growth, owned));
+}
+
+function getAutoBooperBps(auto) {
+  const owned = auto.owned ?? 0;
+  return (auto.baseBps ?? 0) * owned;
 }
 
 function getSkinById(id) {
@@ -849,24 +861,25 @@ function getMostBoopedSkin() {
 }
 
 function recalculateProductionStats() {
-  let baseBpc = BASE_BPC;
-  let baseBps = BASE_BPS;
-
-  gameState.bpcUpgrades.forEach((upgrade) => {
-    if (upgrade.purchased) {
-      baseBpc += upgrade.bonusBpc;
-    }
-  });
-
-  gameState.autoBoopers.forEach((booper) => {
-    if (booper.level > 0) {
-      baseBps += booper.level * booper.bonusBpsPerLevel;
-    }
-  });
-
-  gameState.bpc = baseBpc;
-  gameState.bps = baseBps;
   rebuildPermanentBonuses();
+
+  const clickMultiplier = gameState.bpcUpgrades.reduce((acc, upgrade) => {
+    if (upgrade.purchased) {
+      return acc + (upgrade.bpcMultiplierBonus || 0);
+    }
+    return acc;
+  }, 1);
+
+  gameState.bpcBase = BASE_BPC;
+  gameState.bpc = gameState.bpcBase;
+  gameState.bpcMultiplier *= clickMultiplier;
+
+  let baseBps = 0;
+  gameState.autoBoopers.forEach((booper) => {
+    baseBps += getAutoBooperBps(booper);
+  });
+  gameState.bpsBase = baseBps;
+  gameState.bps = baseBps;
 }
 
 function rebuildPermanentBonuses() {
@@ -965,22 +978,15 @@ function chooseFaction(id) {
 }
 
 function getFinalBpc() {
-  const baseWithFlat = gameState.bpc + (gameState.bpcFlatBonus || 0);
-  return (
-    baseWithFlat *
-    gameState.bpcMultiplier *
-    gameState.globalMultiplier *
-    (1 + gameState.factionBonus.bpc)
-  );
+  const base = (gameState.bpcBase ?? BASE_BPC) + (gameState.bpcFlatBonus || 0);
+  const factionBonus = 1 + (gameState.factionBonus?.bpc || 0);
+  return base * gameState.bpcMultiplier * gameState.globalMultiplier * factionBonus;
 }
 
 function getFinalBps() {
-  return (
-    gameState.bps *
-    gameState.bpsMultiplier *
-    gameState.globalMultiplier *
-    (1 + gameState.factionBonus.bps)
-  );
+  const base = gameState.bpsBase ?? gameState.bps ?? 0;
+  const factionBonus = 1 + (gameState.factionBonus?.bps || 0);
+  return base * gameState.bpsMultiplier * gameState.globalMultiplier * factionBonus;
 }
 
 function getEffectiveCritChance() {
@@ -1221,7 +1227,7 @@ function renderBpcUpgrades() {
       tooltipData: {
         name: upgrade.name,
         description: upgrade.description,
-        extra: `+${formatNumber(upgrade.bonusBpc)} BPC`,
+        extra: `+${Math.round((upgrade.bpcMultiplierBonus || 0) * 100)}% BPC`,
       },
     });
     fragment.appendChild(row);
@@ -1252,19 +1258,20 @@ function renderAutoBoopers() {
 
   const fragment = document.createDocumentFragment();
   gameState.autoBoopers.forEach((booper) => {
-    const canAfford = gameState.boops >= booper.currentCost;
+    const nextCost = getAutoBooperCost(booper);
+    const canAfford = gameState.boops >= nextCost;
     const row = createStoreRow({
       icon: '🏭',
       name: booper.name,
-      subLabel: `Owned: ${formatNumber(booper.level)}`,
-      costLabel: `${formatNumber(booper.currentCost)} boops`,
+      subLabel: `Owned: ${formatNumber(booper.owned || 0)}`,
+      costLabel: `${formatNumber(nextCost)} boops`,
       dataset: { id: booper.id, type: 'auto' },
       affordable: canAfford,
       disabled: false,
       tooltipData: {
         name: booper.name,
         description: booper.description,
-        extra: `+${formatNumber(booper.bonusBpsPerLevel)} BPS / lvl`,
+        extra: `+${formatNumber(booper.baseBps)} BPS / szt.`,
       },
     });
     fragment.appendChild(row);
@@ -1600,10 +1607,16 @@ function updateStatsUI() {
 
 function updateAchievementsUI() {
   const container = ui.achievementsGrid;
-  if (!container) return;
-  container.innerHTML = '';
+  const sidebar = ui.achievementsList;
+  if (container) {
+    container.innerHTML = '';
+  }
+  if (sidebar) {
+    sidebar.innerHTML = '';
+  }
 
   const fragment = document.createDocumentFragment();
+  const listFragment = document.createDocumentFragment();
   const unlockedSet = new Set(gameState.achievementsUnlocked);
 
   achievements.forEach((achievement) => {
@@ -1619,9 +1632,25 @@ function updateAchievementsUI() {
       <div class="achievement-rarity">${achievement.rarity.toUpperCase()}</div>
     `;
     fragment.appendChild(card);
+
+    const row = document.createElement('div');
+    row.className = 'achievement-row';
+    if (unlockedSet.has(achievement.id)) {
+      row.classList.add('unlocked');
+    }
+    row.innerHTML = `
+      <div class="achievement-name">${achievement.name}</div>
+      <div class="achievement-desc">${achievement.desc}</div>
+    `;
+    listFragment.appendChild(row);
   });
 
-  container.appendChild(fragment);
+  if (container) {
+    container.appendChild(fragment);
+  }
+  if (sidebar) {
+    sidebar.appendChild(listFragment);
+  }
 }
 
 function checkAchievements() {
@@ -1682,8 +1711,8 @@ function doBoop() {
   spawnBoopFloat(appliedGain);
   animateBoopButton();
   if (ui.boopButton) {
-    ui.boopButton.classList.add('boop-pressed');
-    setTimeout(() => ui.boopButton.classList.remove('boop-pressed'), 80);
+    ui.boopButton.classList.add('boop-pressed', 'pressed');
+    setTimeout(() => ui.boopButton.classList.remove('boop-pressed', 'pressed'), 80);
   }
   playSfx(isCrit ? 'crit' : 'boop');
 
@@ -1716,13 +1745,13 @@ function buyBpcUpgrade(id) {
 
 function buyAutoBooper(id) {
   const booper = gameState.autoBoopers.find((item) => item.id === id);
-  if (!booper || gameState.boops < booper.currentCost) {
+  const cost = booper ? getAutoBooperCost(booper) : 0;
+  if (!booper || gameState.boops < cost) {
     return;
   }
 
-  gameState.boops -= booper.currentCost;
-  booper.level += 1;
-  booper.currentCost = Math.ceil(booper.currentCost * booper.scale);
+  gameState.boops -= cost;
+  booper.owned = (booper.owned || 0) + 1;
   gameState.totalAutoBoopers += 1;
   recalculateProductionStats();
   markStoreDirty();
@@ -1858,7 +1887,7 @@ function showCritPopup(value) {
   ui.critPopup.classList.remove('show');
   void ui.critPopup.offsetWidth;
   ui.critPopup.classList.add('show');
-  spawnFloatingText('CRITICAL BOOP!', 'crit-floating');
+  spawnFloatingText(`CRITICAL BOOP! +${formatNumber(Math.floor(value))}`, 'crit-floating');
 }
 
 function animateBoopButton() {
@@ -1871,14 +1900,6 @@ function animateBoopButton() {
 function spawnBoopFloat(amount) {
   if (!gameState.settings?.particlesEnabled || amount <= 0) return;
   spawnFloatingText(`+${formatNumber(Math.floor(amount))}`);
-}
-
-function getRandomBoopOffsets() {
-  if (!ui.boopButton) return { randX: 0, randY: 0 };
-  const rect = ui.boopButton.getBoundingClientRect();
-  const randX = Math.random() * rect.width - rect.width / 2;
-  const randY = Math.random() * rect.height - rect.height / 2;
-  return { randX, randY };
 }
 
 function spawnFloatingText(text, extraClass) {
@@ -2005,8 +2026,14 @@ initGame();
 // TODO: Social faction totems dzielone między graczy.
 
 /*
-Gra działa w pętli sekundowej, naliczając BPS * globalMultiplier oraz boopy z kliknięć,
-które korzystają z aktualnego BPC (w tym critów). Stan gry, prestiż, meta-perki oraz
-zakupione upgrade'y zapisują się w localStorage i obejmują progres offline. Rozszerzenia
-to TODO powyżej: rozbudowane meta tree oraz społecznościowe totemy.
+Dev summary:
+- Settings UI: lewa kolumna, sekcja "Settings" – toggluje soundEnabled, particlesEnabled
+  (floating text) oraz shortNumbers (formatNumber respektuje wybór).
+- Achievements: stan w gameState.achievementsUnlocked, sprawdzane w checkAchievements()
+  po klikach, zakupach i prestiżu; nagrody stosowane w applyAchievementReward/showAchievementPopup
+  i renderowane w modalu + panelu bocznym.
+- Ekonomia: helpery getAutoBooperCost/getAutoBooperBps i getFinalBpc ujednolicają koszt,
+  skalowanie BPS oraz ostateczny BPC (uwzględnia mnożniki, frakcję, globalMultiplier).
+- Share panel: aktualizowany w updateShareText() (left column) i kopiowany przyciskiem
+  initShareUI() z użyciem navigator.clipboard.
 */
