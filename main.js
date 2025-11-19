@@ -139,22 +139,44 @@ const factionConfig = [
 
 const skinsConfig = [
   {
-    id: 'default_paw',
-    name: 'Default Paw',
-    preview: '🐾',
-    owned: true,
-    unlockCost: 0,
+    id: 'player1',
+    name: 'Kordi',
+    avatar: '🦊',
+    owned: false,
+    unlockCost: 500,
     unlockCode: null,
     boops: 0,
+    public: true,
+  },
+  {
+    id: 'player2',
+    name: 'Lumina',
+    avatar: '🐱',
+    owned: false,
+    unlockCost: 800,
+    unlockCode: null,
+    boops: 0,
+    public: true,
+  },
+  {
+    id: 'custom_slot',
+    name: 'Your Custom Slot',
+    avatar: '✨',
+    owned: false,
+    unlockCost: null,
+    unlockCode: 'SLOT1234',
+    boops: 0,
+    public: false,
   },
   {
     id: 'pink_glow',
     name: 'Pink Glow',
-    preview: '✨',
+    avatar: '✨',
     owned: false,
-    unlockCost: 0,
+    unlockCost: null,
     unlockCode: 'achievement_prestige_1',
     boops: 0,
+    public: false,
   },
 ];
 
@@ -213,7 +235,7 @@ const gameState = {
   autoBoopers: autoBoopersConfig.map((booper) => ({ ...booper })),
   metaPerks: metaPerksConfig.map((perk) => ({ ...perk })),
   skins: skinsConfig.map((skin) => ({ ...skin })),
-  currentSkinId: 'default_paw',
+  currentSkinId: 'player1',
   playerName: 'Anonymous',
   playerAvatar: '🧸',
   factions: factionConfig.map((faction) => ({ ...faction })),
@@ -228,6 +250,8 @@ const gameState = {
   prestigeThreshold: PRESTIGE_THRESHOLD,
   achievementsUnlocked: [],
   unlockedSkins: [],
+  boopers: [],
+  skinHighscores: [],
   totalClicks: 0,
   totalCrits: 0,
   totalPrestiges: 0,
@@ -264,6 +288,12 @@ const ui = {
   currentSkinBoops: document.getElementById('current-skin-boops'),
   topSkinName: document.getElementById('top-skin-name'),
   topSkinBoops: document.getElementById('top-skin-boops'),
+  skinsShopList: document.getElementById('skins-shop-list'),
+  skinCodeInput: document.getElementById('skin-code-input'),
+  skinCodeButton: document.getElementById('skin-code-button'),
+  skinCodeMessage: document.getElementById('skin-code-message'),
+  topBoopersList: document.getElementById('top-boopers-list'),
+  topSkinsList: document.getElementById('top-skins-list'),
   factionCurrent: document.getElementById('faction-current'),
   factionChoiceContainer: document.getElementById('faction-choice-container'),
   prestigeTotalBoops: document.getElementById('total-boops-value'),
@@ -445,6 +475,13 @@ function attachHandlers() {
   });
   ui.debugAddBoopsButton?.addEventListener('click', grantDebugBoops);
   ui.debugResetButton?.addEventListener('click', handleDebugResetClick);
+  ui.skinCodeButton?.addEventListener('click', handleSkinCodeSubmit);
+  ui.skinCodeInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSkinCodeSubmit();
+    }
+  });
   window.addEventListener('beforeunload', saveGame);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
@@ -509,6 +546,8 @@ function loadGame() {
     gameState.unlockedSkins = Array.isArray(data.unlockedSkins)
       ? Array.from(new Set(data.unlockedSkins))
       : [];
+    gameState.boopers = Array.isArray(data.boopers) ? data.boopers : [];
+    gameState.skinHighscores = Array.isArray(data.skinHighscores) ? data.skinHighscores : [];
     const savedSkins = Array.isArray(data.skins) ? data.skins : [];
     gameState.bpcUpgrades = restoreBpcUpgrades(data.bpcUpgrades);
     gameState.autoBoopers = restoreAutoBoopers(data.autoBoopers);
@@ -549,10 +588,13 @@ function loadGame() {
   recalculateProductionStats();
   applyOfflineProgress();
   checkAchievements();
+  updateHighscores();
   markStoreDirty();
 }
 
 function saveGame() {
+  updateBoopersLeaderboard();
+  updateSkinHighscores();
   const payload = {
     boops: gameState.boops,
     totalBoops: gameState.totalBoops,
@@ -570,6 +612,8 @@ function saveGame() {
     playerAvatar: gameState.playerAvatar,
     achievementsUnlocked: gameState.achievementsUnlocked,
     unlockedSkins: gameState.unlockedSkins,
+    boopers: gameState.boopers,
+    skinHighscores: gameState.skinHighscores,
     currentFaction: gameState.currentFaction,
     factionBonus: gameState.factionBonus,
     boopEssence: gameState.boopEssence,
@@ -624,11 +668,16 @@ function restoreSkins(savedList, unlockedSkins) {
   return skinsConfig.map((skin) => {
     const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === skin.id) : null;
     const owned = (saved?.owned ?? skin.owned) || unlockedSet.has(skin.id);
-    const boops = typeof saved?.boops === 'number' ? saved.boops : 0;
+    const boops = typeof saved?.boops === 'number' ? saved.boops : skin.boops || 0;
+    const isPublic = saved?.public ?? skin.public ?? true;
     return {
       ...skin,
+      avatar: saved?.avatar || skin.avatar,
       owned,
       boops,
+      public: isPublic,
+      unlockCost: saved?.unlockCost ?? skin.unlockCost ?? null,
+      unlockCode: saved?.unlockCode ?? skin.unlockCode ?? null,
     };
   });
 }
@@ -870,6 +919,8 @@ function updateUI() {
 
   updateProfileUI();
   updateSkinStatsUI();
+  renderSkinsShop();
+  renderHighscores();
 
   updateStoreUI();
   updatePrestigeUI();
@@ -1093,6 +1144,66 @@ function renderAutoBoopers() {
   container.appendChild(fragment);
 }
 
+function renderSkinsShop() {
+  const list = ui.skinsShopList;
+  if (!list) return;
+  list.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
+  const visibleSkins = gameState.skins.filter((skin) => skin.public || skin.owned);
+
+  visibleSkins.forEach((skin) => {
+    const card = document.createElement('article');
+    card.className = 'skin-card';
+    if (skin.owned) {
+      card.classList.add('owned');
+    }
+
+    const header = document.createElement('div');
+    header.className = 'skin-card-header';
+    const avatar = document.createElement('span');
+    avatar.className = 'skin-avatar';
+    avatar.textContent = skin.avatar || '✨';
+    const title = document.createElement('div');
+    title.className = 'skin-name';
+    title.textContent = skin.name;
+    header.append(avatar, title);
+
+    const boopsLine = document.createElement('div');
+    boopsLine.className = 'skin-boops';
+    boopsLine.textContent = `Boops: ${numberFormatter.format(skin.boops || 0)}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'skin-actions';
+
+    if (skin.owned) {
+      const equipButton = document.createElement('button');
+      equipButton.type = 'button';
+      equipButton.textContent = skin.id === gameState.currentSkinId ? 'Equipped' : 'Equip';
+      equipButton.disabled = skin.id === gameState.currentSkinId;
+      equipButton.addEventListener('click', () => equipSkin(skin.id));
+      actions.appendChild(equipButton);
+    } else if (skin.unlockCost != null) {
+      const buyButton = document.createElement('button');
+      buyButton.type = 'button';
+      buyButton.textContent = `Buy (${numberFormatter.format(skin.unlockCost)} boops)`;
+      buyButton.disabled = gameState.boops < skin.unlockCost;
+      buyButton.addEventListener('click', () => buySkinWithBoops(skin.id));
+      actions.appendChild(buyButton);
+    } else if (skin.unlockCode) {
+      const label = document.createElement('p');
+      label.className = 'skin-locked-label';
+      label.textContent = 'Unlockable by code';
+      actions.appendChild(label);
+    }
+
+    card.append(header, boopsLine, actions);
+    fragment.appendChild(card);
+  });
+
+  list.appendChild(fragment);
+}
+
 function renderMetaPerks() {
   const container = ui.metaPerksContainer;
   if (!container) return;
@@ -1169,17 +1280,143 @@ function updateProfileUI() {
 function updateSkinStatsUI() {
   const currentSkin = getCurrentSkin();
   if (ui.currentSkinBoops) {
-    ui.currentSkinBoops.textContent = currentSkin ? currentSkin.boops || 0 : 0;
+    ui.currentSkinBoops.textContent = currentSkin ? numberFormatter.format(currentSkin.boops || 0) : 0;
   }
   const topSkin = getMostBoopedSkin();
   if (ui.topSkinName && ui.topSkinBoops) {
     if (topSkin) {
       ui.topSkinName.textContent = topSkin.name;
-      ui.topSkinBoops.textContent = topSkin.boops || 0;
+      ui.topSkinBoops.textContent = numberFormatter.format(topSkin.boops || 0);
     } else {
       ui.topSkinName.textContent = 'None';
       ui.topSkinBoops.textContent = 0;
     }
+  }
+}
+
+function buySkinWithBoops(id) {
+  const skin = getSkinById(id);
+  if (!skin || skin.owned || skin.unlockCost == null) return;
+  if (gameState.boops < skin.unlockCost) return;
+
+  gameState.boops -= skin.unlockCost;
+  skin.owned = true;
+  if (!gameState.currentSkinId || !getCurrentSkin()) {
+    gameState.currentSkinId = skin.id;
+  }
+  updateSkinHighscores();
+  saveGame();
+  updateUI();
+}
+
+function equipSkin(id) {
+  const skin = getSkinById(id);
+  if (!skin || !skin.owned) return;
+  gameState.currentSkinId = skin.id;
+  saveGame();
+  updateUI();
+}
+
+function unlockSkinWithCode(code) {
+  const messageEl = ui.skinCodeMessage;
+  if (!code) {
+    if (messageEl) messageEl.textContent = 'Enter a code to unlock a custom skin.';
+    return;
+  }
+  const normalized = code.trim().toLowerCase();
+  const skin = gameState.skins.find(
+    (item) => item.unlockCode && item.unlockCode.toLowerCase() === normalized
+  );
+  if (!skin) {
+    if (messageEl) messageEl.textContent = 'Invalid code.';
+    return;
+  }
+
+  if (!skin.owned) {
+    skin.owned = true;
+    skin.public = true;
+    gameState.unlockedSkins = Array.from(new Set([...(gameState.unlockedSkins || []), skin.id]));
+    if (!gameState.currentSkinId) {
+      gameState.currentSkinId = skin.id;
+    }
+    saveGame();
+    renderSkinsShop();
+    if (messageEl) messageEl.textContent = `${skin.name} unlocked!`;
+  } else if (messageEl) {
+    messageEl.textContent = `${skin.name} is already unlocked.`;
+  }
+}
+
+function handleSkinCodeSubmit() {
+  const input = ui.skinCodeInput;
+  if (!input) return;
+  unlockSkinWithCode(input.value || '');
+  input.value = '';
+}
+
+function updateBoopersLeaderboard() {
+  const entry = {
+    name: gameState.playerName || 'Anonymous',
+    avatar: gameState.playerAvatar || '🧸',
+    totalBoops: Math.floor(gameState.totalBoops || 0),
+  };
+  const list = Array.isArray(gameState.boopers) ? [...gameState.boopers] : [];
+  const existingIndex = list.findIndex(
+    (item) => item.name === entry.name && item.avatar === entry.avatar
+  );
+  if (existingIndex >= 0) {
+    list[existingIndex] = entry;
+  } else {
+    list.push(entry);
+  }
+  list.sort((a, b) => (b.totalBoops || 0) - (a.totalBoops || 0));
+  gameState.boopers = list.slice(0, 5);
+}
+
+function updateSkinHighscores() {
+  const list = Array.isArray(gameState.skins)
+    ? gameState.skins.map((skin) => ({
+        id: skin.id,
+        name: skin.name,
+        avatar: skin.avatar,
+        boops: skin.boops || 0,
+      }))
+    : [];
+  list.sort((a, b) => (b.boops || 0) - (a.boops || 0));
+  gameState.skinHighscores = list.slice(0, 5);
+}
+
+function updateHighscores() {
+  updateBoopersLeaderboard();
+  updateSkinHighscores();
+}
+
+function renderHighscores() {
+  updateHighscores();
+
+  const boopersList = ui.topBoopersList;
+  const skinsList = ui.topSkinsList;
+
+  if (boopersList) {
+    boopersList.innerHTML = '';
+    (gameState.boopers || []).forEach((entry) => {
+      const li = document.createElement('li');
+      li.textContent = `${entry.avatar || ''} ${entry.name || 'Anon'} – ${numberFormatter.format(
+        entry.totalBoops || 0
+      )} boops`;
+      boopersList.appendChild(li);
+    });
+  }
+
+  if (skinsList) {
+    skinsList.innerHTML = '';
+    (gameState.skinHighscores || []).forEach((entry) => {
+      const li = document.createElement('li');
+      li.textContent = `${entry.avatar || ''} ${entry.name || 'Skin'} – ${numberFormatter.format(
+        entry.boops || 0
+      )} boops`;
+      skinsList.appendChild(li);
+    });
   }
 }
 

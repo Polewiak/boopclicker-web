@@ -47,6 +47,18 @@
           </p>
         </section>
 
+        <section id="highscores-section" aria-label="Local highscores">
+          <h2>Highscores</h2>
+          <div>
+            <h3>Top Boopers</h3>
+            <ol id="top-boopers-list"></ol>
+          </div>
+          <div>
+            <h3>Top Skins</h3>
+            <ol id="top-skins-list"></ol>
+          </div>
+        </section>
+
         <section id="top-stats-bar" aria-live="polite">
           <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
           <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
@@ -91,6 +103,17 @@
         <section id="bps-upgrades" aria-label="Auto-Boopers">
           <h2>Auto-Boopers</h2>
           <div id="auto-upgrades-container" class="store-container"></div>
+        </section>
+
+        <section id="skins-shop" aria-label="Skins Shop">
+          <h2>Skins Shop</h2>
+          <div id="skins-shop-list"></div>
+          <div id="unlock-with-code">
+            <h3>Unlock custom skin</h3>
+            <input type="text" id="skin-code-input" placeholder="Enter code" aria-label="Skin unlock code" />
+            <button id="skin-code-button" type="button">Unlock</button>
+            <p id="skin-code-message" aria-live="polite"></p>
+          </div>
         </section>
       </aside>
     </div>

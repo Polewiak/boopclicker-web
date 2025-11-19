@@ -151,6 +151,25 @@ button {
   font-size: 13px;
 }
 
+#highscores-section {
+  width: 100%;
+  padding: 10px 12px;
+  background: #181818;
+  border-radius: 10px;
+  border: 1px solid #333;
+  font-size: 13px;
+}
+
+#highscores-section h3 {
+  margin: 8px 0 4px;
+}
+
+#highscores-section ol {
+  margin: 0;
+  padding-left: 18px;
+  color: #ddd;
+}
+
 .top-stat {
   font-size: 14px;
   color: #ddd;
@@ -372,6 +391,99 @@ button {
 
 .store-row.purchased-flash {
   animation: store-purchased 0.25s ease-out;
+}
+
+#skins-shop {
+  margin-top: 16px;
+  background: #181818;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+#skins-shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skin-card {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #3a3a3a;
+  background: #222;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skin-card.owned {
+  border-color: #6bff7a;
+  box-shadow: 0 0 6px rgba(107, 255, 122, 0.4);
+}
+
+.skin-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skin-avatar {
+  font-size: 22px;
+}
+
+.skin-name {
+  font-weight: 700;
+}
+
+.skin-boops {
+  font-size: 13px;
+  color: #ddd;
+}
+
+.skin-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.skin-locked-label {
+  margin: 0;
+  font-size: 12px;
+  color: #cfcfcf;
+}
+
+#unlock-with-code {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #202020;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#unlock-with-code input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #111;
+  color: #fff;
+}
+
+#unlock-with-code button {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2a2a2a;
+  color: #fff;
+  cursor: pointer;
+}
+
+#skin-code-message {
+  min-height: 16px;
+  font-size: 12px;
+  color: #dcdcdc;
 }
 
 @keyframes store-purchased {
