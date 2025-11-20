@@ -9,6 +9,8 @@ const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+// Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
+// and previous full-height centering rules were dropped to remove the desktop blank space.
 
 const ALL_TITLES = [
   { id: 'none', name: 'No Title' },
@@ -657,13 +659,9 @@ let lastUnlockedClickCount = 0;
 let factionOverlayRendered = false;
 
 const ui = {
-  topBoops: document.getElementById('ts-boops'),
-  topBpc: document.getElementById('ts-bpc'),
-  topBps: document.getElementById('ts-bps'),
-  topTotalBoops: document.getElementById('ts-total-boops'),
-  topEssence: document.getElementById('ts-boop-essence'),
-  critChance: document.getElementById('critChance'),
-  critMultiplier: document.getElementById('critMultiplier'),
+  boopPlayerName: document.getElementById('boop-player-name'),
+  boopCountValue: document.getElementById('boop-count-value'),
+  boopBpsValue: document.getElementById('boop-bps-value'),
   boopButton: document.getElementById('boop-button'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
@@ -694,6 +692,11 @@ const ui = {
   statsTotalClicks: document.getElementById('stats-total-clicks'),
   statsTotalCrits: document.getElementById('stats-total-crits'),
   statsTotalPrestiges: document.getElementById('stats-total-prestiges'),
+  statsCritChance: document.getElementById('stats-crit-chance'),
+  statsCritMultiplier: document.getElementById('stats-crit-multiplier'),
+  statsBpcMultiplier: document.getElementById('stats-bpc-multiplier'),
+  statsBpsMultiplier: document.getElementById('stats-bps-multiplier'),
+  statsGlobalMultiplier: document.getElementById('stats-global-multiplier'),
   achievementsGrid: document.getElementById('achievements-grid'),
   achievementsList: document.getElementById('achievements-list'),
   achievementToast: document.getElementById('achievement-toast'),
@@ -707,9 +710,8 @@ const ui = {
   settingsSound: document.getElementById('settings-sound'),
   settingsParticles: document.getElementById('settings-particles'),
   settingsShortNumbers: document.getElementById('settings-shortnumbers'),
-  dailyBoxStatus: document.getElementById('daily-box-status'),
-  dailyBoxResult: document.getElementById('daily-box-result'),
-  dailyBoxButton: document.getElementById('daily-box-open-button'),
+  dailyBoxFloatButton: document.getElementById('daily-box-float-button'),
+  dailyBoxFloatTimer: document.getElementById('daily-box-float-timer'),
 };
 
 const storeTooltip = {
@@ -852,33 +854,35 @@ function updateUpgradeCardVisuals() {
 }
 
 const modalControls = {
-  overlay: document.getElementById('modal-overlay'),
-  closeButton: document.getElementById('modal-close'),
+  backdrop: document.getElementById('modal-backdrop'),
+  closeButton: document.getElementById('modal-close-button'),
+  content: document.getElementById('modal-content'),
+  stash: document.getElementById('modal-stash'),
 };
 
 function setupModals() {
-  const sideButtons = document.querySelectorAll('.side-menu-btn');
-  sideButtons.forEach((button) => {
+  const buttons = document.querySelectorAll('.top-bar-icon');
+  buttons.forEach((button) => {
     const targetId = button.getAttribute('data-modal');
     button.addEventListener('click', () => openModal(targetId));
   });
 
   modalControls.closeButton?.addEventListener('click', closeModal);
-  modalControls.overlay?.addEventListener('click', (event) => {
-    if (event.target === modalControls.overlay) {
+  modalControls.backdrop?.addEventListener('click', (event) => {
+    if (event.target === modalControls.backdrop) {
       closeModal();
     }
   });
 }
 
 function openModal(targetId) {
-  if (!targetId || !modalControls.overlay) {
+  if (!targetId || !modalControls.backdrop || !modalControls.content || !modalControls.stash) {
     return;
   }
 
-  document.querySelectorAll('.modal-content').forEach((content) => {
-    content.classList.add('hidden');
-  });
+  if (modalControls.content.firstChild) {
+    modalControls.stash.appendChild(modalControls.content.firstChild);
+  }
 
   const target = document.getElementById(targetId);
   if (!target) {
@@ -886,19 +890,31 @@ function openModal(targetId) {
   }
 
   hideStoreTooltip();
-  if (targetId === 'stats-modal') {
+  modalControls.content.appendChild(target);
+  if (targetId === 'stats-panel' || targetId === 'achievements-section') {
     updateStatsUI();
     updateAchievementsUI();
   }
-  target.classList.remove('hidden');
-  modalControls.overlay.classList.remove('hidden');
+  if (targetId === 'prestige-section') {
+    updatePrestigeUI();
+  }
+  if (targetId === 'meta-perks-section') {
+    renderMetaPerks();
+  }
+  if (targetId === 'faction-section') {
+    renderFactions();
+  }
+  if (targetId === 'highscores-section') {
+    renderHighscores();
+  }
+  modalControls.backdrop.classList.remove('hidden');
 }
 
 function closeModal() {
-  document.querySelectorAll('.modal-content').forEach((content) => {
-    content.classList.add('hidden');
-  });
-  modalControls.overlay?.classList.add('hidden');
+  if (modalControls.stash && modalControls.content?.firstChild) {
+    modalControls.stash.appendChild(modalControls.content.firstChild);
+  }
+  modalControls.backdrop?.classList.add('hidden');
 }
 
 function initGame() {
@@ -1027,7 +1043,7 @@ function initSettingsUI() {
 }
 
 function initDailyBoxUI() {
-  const openBtn = ui.dailyBoxButton;
+  const openBtn = ui.dailyBoxFloatButton;
   if (!openBtn) return;
 
   openBtn.addEventListener('click', () => {
@@ -1044,10 +1060,6 @@ function initDailyBoxUI() {
 
     saveGame();
     updateUI();
-
-    if (ui.dailyBoxResult) {
-      ui.dailyBoxResult.textContent = `You opened the box and received ${formatNumber(reward)} boops!`;
-    }
   });
 }
 
@@ -1463,27 +1475,14 @@ function updateUI() {
     hideFactionOverlay();
   }
 
-  if (ui.topBoops) {
-    ui.topBoops.textContent = formattedBoops;
+  if (ui.boopPlayerName) {
+    ui.boopPlayerName.textContent = gameState.playerName || 'Anonymous';
   }
-  if (ui.topTotalBoops) {
-    ui.topTotalBoops.textContent = formattedTotal;
+  if (ui.boopCountValue) {
+    ui.boopCountValue.textContent = formattedBoops;
   }
-  if (ui.topBpc) {
-    ui.topBpc.textContent = formattedBpc;
-  }
-  if (ui.topBps) {
-    ui.topBps.textContent = formattedBps;
-  }
-  if (ui.topEssence) {
-    ui.topEssence.textContent = formatNumber(Math.floor(gameState.boopEssence));
-  }
-
-  if (ui.critChance) {
-    ui.critChance.textContent = formatCritChance(getEffectiveCritChance());
-  }
-  if (ui.critMultiplier) {
-    ui.critMultiplier.textContent = `×${formatNumber(gameState.critMultiplier)}`;
+  if (ui.boopBpsValue) {
+    ui.boopBpsValue.textContent = `${formattedBps} boops / second`;
   }
 
   if (ui.metaBeValue) {
@@ -1502,7 +1501,7 @@ function updateUI() {
   renderFactions();
   updateStatsUI();
   updateAchievementsUI();
-  updateDailyBoxUI();
+  updateDailyBoxFloatUI();
 }
 
 function updateDailyBoxState() {
@@ -1522,19 +1521,19 @@ function getDailyBoxRemainingMs() {
   return Math.max(0, remaining);
 }
 
-function updateDailyBoxUI() {
+function updateDailyBoxFloatUI() {
   updateDailyBoxState();
-  const statusEl = ui.dailyBoxStatus;
-  const openBtn = ui.dailyBoxButton;
-  if (!statusEl || !openBtn) return;
+  const openBtn = ui.dailyBoxFloatButton;
+  const timerEl = ui.dailyBoxFloatTimer;
+  if (!openBtn || !timerEl) return;
 
   if (gameState.dailyBoxAvailable) {
-    statusEl.textContent = 'Box is ready! You can open it now.';
+    timerEl.textContent = 'Ready!';
     openBtn.disabled = false;
   } else {
     const remainingMs = getDailyBoxRemainingMs();
     if (remainingMs <= 0) {
-      statusEl.textContent = 'Box is ready! You can open it now.';
+      timerEl.textContent = 'Ready!';
       openBtn.disabled = false;
       gameState.dailyBoxAvailable = true;
     } else {
@@ -1542,7 +1541,7 @@ function updateDailyBoxUI() {
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-      statusEl.textContent = `Next box in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      timerEl.textContent = `Next in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
       openBtn.disabled = true;
     }
   }
@@ -2094,6 +2093,21 @@ function updateStatsUI() {
   }
   if (ui.statsTotalPrestiges) {
     ui.statsTotalPrestiges.textContent = formatNumber(gameState.totalPrestiges);
+  }
+  if (ui.statsCritChance) {
+    ui.statsCritChance.textContent = formatCritChance(getEffectiveCritChance());
+  }
+  if (ui.statsCritMultiplier) {
+    ui.statsCritMultiplier.textContent = `×${formatNumber(gameState.critMultiplier)}`;
+  }
+  if (ui.statsBpcMultiplier) {
+    ui.statsBpcMultiplier.textContent = formatNumber(gameState.bpcMultiplier);
+  }
+  if (ui.statsBpsMultiplier) {
+    ui.statsBpsMultiplier.textContent = formatNumber(gameState.bpsMultiplier);
+  }
+  if (ui.statsGlobalMultiplier) {
+    ui.statsGlobalMultiplier.textContent = formatNumber(gameState.globalMultiplier);
   }
 }
 

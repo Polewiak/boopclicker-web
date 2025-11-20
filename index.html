@@ -7,134 +7,46 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div id="app-container">
-      <nav id="side-menu" aria-label="Menu boczne">
-        <button class="side-menu-btn" type="button" data-modal="prestige-modal" aria-label="Prestige">★</button>
-        <button class="side-menu-btn" type="button" data-modal="meta-modal" aria-label="Meta Perks">◎</button>
-        <button class="side-menu-btn" type="button" data-modal="faction-modal" aria-label="Factions">🐾</button>
-        <button class="side-menu-btn" type="button" data-modal="stats-modal" aria-label="Stats & Achievements">📊</button>
-      </nav>
+    <div id="top-bar">
+      <div id="top-bar-left">
+        <span id="top-bar-logo">Boopclicker</span>
+      </div>
+      <div id="top-bar-right" aria-label="Navigation shortcuts">
+        <button class="top-bar-icon" type="button" data-modal="profile-section" title="Profile">👤</button>
+        <button class="top-bar-icon" type="button" data-modal="skin-stats-section" title="Skin stats">🎨</button>
+        <button class="top-bar-icon" type="button" data-modal="stats-panel" title="Stats">📊</button>
+        <button class="top-bar-icon" type="button" data-modal="achievements-section" title="Achievements">🏆</button>
+        <button class="top-bar-icon" type="button" data-modal="highscores-section" title="Highscores">🏅</button>
+        <button class="top-bar-icon" type="button" data-modal="prestige-section" title="Prestige">🔥</button>
+        <button class="top-bar-icon" type="button" data-modal="meta-perks-section" title="Meta perks">◎</button>
+        <button class="top-bar-icon" type="button" data-modal="faction-section" title="Factions">🐾</button>
+        <button class="top-bar-icon" type="button" data-modal="share-section" title="Share">🔗</button>
+        <button class="top-bar-icon" type="button" data-modal="settings-section" title="Settings">⚙️</button>
+        <button class="top-bar-icon" type="button" data-modal="debug-section" title="Debug">🛠</button>
+      </div>
+    </div>
 
-      <aside id="left-column" aria-label="Profil i statystyki skórek">
-        <section id="profile-section" aria-label="Profil gracza">
-          <h2>Player Profile</h2>
-          <div id="profile-display">
-            <span id="profile-avatar" aria-hidden="true">🧸</span>
-            <span id="profile-name">Anonymous</span>
-            <span id="profile-title-display" class="profile-title-badge">No Title</span>
-          </div>
-          <div id="profile-title-row">
-            <label for="profile-title-select">Title:</label>
-            <select id="profile-title-select"></select>
-          </div>
-          <div id="profile-edit">
-            <input type="text" id="profile-name-input" placeholder="Your nick" aria-label="Player nickname" />
-            <p class="profile-note">Avatar zmienisz, wybierając skina w Skins Shop.</p>
-            <button id="profile-save-button" type="button">Save</button>
-          </div>
-        </section>
-
-        <section id="skin-stats-section" aria-label="Skin statistics">
-          <h2>Skin Stats</h2>
-          <p>Current skin boops: <span id="current-skin-boops">0</span></p>
-          <p>
-            Most booped skin:
-            <span id="top-skin-name">None</span>
-            (<span id="top-skin-boops">0</span> boops)
-          </p>
-        </section>
-
-        <section id="daily-box-section" aria-label="Daily lootbox">
-          <h2>Daily Lootbox</h2>
-          <p id="daily-box-status">Checking availability...</p>
-          <button id="daily-box-open-button" type="button">Open box</button>
-          <p id="daily-box-result"></p>
-        </section>
-
-        <section id="achievements-panel" aria-label="Achievements overview">
-          <h2>Achievements</h2>
-          <div id="achievements-list"></div>
-        </section>
-
-        <section id="highscores-section" aria-label="Local highscores">
-          <h2>Highscores</h2>
-          <div>
-            <h3>Top Boopers</h3>
-            <ol id="top-boopers-list"></ol>
-          </div>
-          <div>
-            <h3>Top Skins</h3>
-            <ol id="top-skins-list"></ol>
-          </div>
-        </section>
-
-        <section id="settings-section" aria-label="Settings">
-          <h2>Settings</h2>
-          <label class="settings-row">
-            <input type="checkbox" id="settings-sound" />
-            Sound effects
-          </label>
-          <label class="settings-row">
-            <input type="checkbox" id="settings-particles" />
-            Floating text / particles
-          </label>
-          <label class="settings-row">
-            <input type="checkbox" id="settings-shortnumbers" />
-            Short number format (1.2K, 3.4M)
-          </label>
-        </section>
-
-        <section id="share-section" aria-label="Share progress">
-          <h2>Share</h2>
-          <p>Copy a small brag message:</p>
-          <textarea id="share-text" rows="3" readonly></textarea>
-          <button id="share-copy-button" type="button">Copy to clipboard</button>
-          <p id="share-status"></p>
-        </section>
-      </aside>
-
-      <main id="main-column">
-        <div id="boop-container">
-          <div id="boop-panel">
-            <h1 id="game-title">Boopclicker</h1>
-
-            <section id="top-stats-bar" aria-live="polite">
-              <div class="top-stat">Boops: <span id="ts-boops">0</span></div>
-              <div class="top-stat">BPC: <span id="ts-bpc">1</span></div>
-              <div class="top-stat">BPS: <span id="ts-bps">0</span></div>
-              <div class="top-stat">Total: <span id="ts-total-boops">0</span></div>
-              <div class="top-stat">BE: <span id="ts-boop-essence">0</span></div>
-            </section>
-
-            <p id="subtitle">Najbardziej miękka gra clickerowa z kotami w tle.</p>
-
-            <section id="center-summary" aria-live="polite">
-              <div class="summary-line">Crit chance: <span id="critChance">3%</span></div>
-              <div class="summary-line">Crit multiplier: <span id="critMultiplier">×7</span></div>
-            </section>
-
-            <p id="offlineNotice" class="offline-notice" role="status" aria-live="polite" hidden>
-              Witaj ponownie! Obliczam progres offline...
-            </p>
-
-            <div class="boop-panel">
-              <button id="boop-button" aria-label="Kliknij, aby boopnąć">BOOP</button>
-              <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
-            </div>
-          </div>
+    <div id="main-layout">
+      <section id="boop-panel" aria-label="Boop panel">
+        <div id="daily-box-float" aria-live="polite">
+          <button id="daily-box-float-button" type="button">Open daily box</button>
+          <span id="daily-box-float-timer">--:--:--</span>
         </div>
-
-        <section id="debug-section" aria-label="Debug tools">
-          <h2>Debug (test only)</h2>
-          <p>Wersja developerska: szybkie akcje do testowania pętli gry.</p>
-          <div class="debug-actions">
-            <button id="debug-add-boops" type="button">Dodaj +10 000 000 boops</button>
-            <button id="debug-reset" type="button">Hard reset save</button>
+        <div id="boop-header">
+          <span id="boop-player-name">Anonymous</span>
+        </div>
+        <div id="boop-main">
+          <div id="boop-count-wrapper">
+            <div id="boop-count-label">Boops</div>
+            <div id="boop-count-value">0</div>
+            <div id="boop-bps-value">0 boops / second</div>
           </div>
-        </section>
-      </main>
+          <button id="boop-button" aria-label="Kliknij, aby boopnąć">BOOP</button>
+          <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
+        </div>
+      </section>
 
-      <aside id="shop-column" aria-label="Sklep z upgrade'ami">
+      <section id="shop-panel" aria-label="Sklep z upgrade'ami">
         <section id="bpc-upgrades" aria-label="Click upgrades">
           <h2>Click Upgrades</h2>
           <div id="click-upgrades-container" class="store-container"></div>
@@ -155,7 +67,7 @@
             <p id="skin-code-message" aria-live="polite"></p>
           </div>
         </section>
-      </aside>
+      </section>
     </div>
 
     <div id="store-tooltip" class="hidden" role="status" aria-live="polite">
@@ -164,65 +76,131 @@
       <div id="store-tooltip-extra"></div>
     </div>
 
-    <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true">
-      <div id="modal-window">
-        <button id="modal-close" type="button" aria-label="Zamknij modal">×</button>
-
-        <div id="prestige-modal" class="modal-content hidden">
-          <section id="prestige-section" aria-label="Prestige">
-            <h2>Prestige</h2>
-            <p>Total Boops: <strong id="total-boops-value">0</strong></p>
-            <p>Boop Essence: <strong id="boop-essence-value">0</strong></p>
-            <p>Potential BE on reset: <strong id="prestige-gain-value">0</strong></p>
-            <p>Global multiplier: <strong id="global-multiplier-value">1.00</strong>x</p>
-            <button id="prestige-button" type="button" disabled>Ascend (Prestige)</button>
-          </section>
-        </div>
-
-        <div id="meta-modal" class="modal-content hidden">
-          <section id="meta-perks-section" aria-label="Meta Tree">
-            <h2>Meta Perks</h2>
-            <p>
-              Boop Essence dostępne:
-              <strong id="meta-be-value">0</strong>
-            </p>
-            <div id="meta-perks-container"></div>
-          </section>
-        </div>
-
-        <div id="faction-modal" class="modal-content hidden">
-          <section id="faction-section" aria-label="Factions and Totems">
-            <h2>Your Faction</h2>
-            <div id="faction-current">Brak wybranego totemu.</div>
-            <h3>Change Faction (on Prestige)</h3>
-            <div id="faction-choice-container"></div>
-          </section>
-        </div>
-
-        <div id="stats-modal" class="modal-content hidden">
-          <section id="stats-section" aria-live="polite">
-            <h2>Stats</h2>
-            <ul class="stats-list">
-              <li>
-                Total Clicks:
-                <strong id="stats-total-clicks">0</strong>
-              </li>
-              <li>
-                Total Critical Boops:
-                <strong id="stats-total-crits">0</strong>
-              </li>
-              <li>
-                Total Prestiges:
-                <strong id="stats-total-prestiges">0</strong>
-              </li>
-            </ul>
-          </section>
-          <section id="achievements-section" aria-live="polite">
-            <h2>Achievements</h2>
-            <div id="achievements-grid"></div>
-          </section>
-        </div>
+    <div class="modal-backdrop hidden" id="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal-window">
+        <button class="modal-close" id="modal-close-button" type="button" aria-label="Close modal">✕</button>
+        <div id="modal-content"></div>
       </div>
+    </div>
+
+    <div id="modal-stash" class="hidden">
+      <section id="profile-section" aria-label="Profil gracza">
+        <h2>Player Profile</h2>
+        <div id="profile-display">
+          <span id="profile-avatar" aria-hidden="true">🧸</span>
+          <span id="profile-name">Anonymous</span>
+          <span id="profile-title-display" class="profile-title-badge">No Title</span>
+        </div>
+        <div id="profile-title-row">
+          <label for="profile-title-select">Title:</label>
+          <select id="profile-title-select"></select>
+        </div>
+        <div id="profile-edit">
+          <input type="text" id="profile-name-input" placeholder="Your nick" aria-label="Player nickname" />
+          <p class="profile-note">Avatar zmienisz, wybierając skina w Skins Shop.</p>
+          <button id="profile-save-button" type="button">Save</button>
+        </div>
+      </section>
+
+      <section id="skin-stats-section" aria-label="Skin statistics">
+        <h2>Skin Stats</h2>
+        <p>Current skin boops: <span id="current-skin-boops">0</span></p>
+        <p>
+          Most booped skin:
+          <span id="top-skin-name">None</span>
+          (<span id="top-skin-boops">0</span> boops)
+        </p>
+      </section>
+
+      <section id="stats-panel" aria-live="polite">
+        <h2>Stats</h2>
+        <ul class="stats-list">
+          <li>Total Clicks: <strong id="stats-total-clicks">0</strong></li>
+          <li>Total Critical Boops: <strong id="stats-total-crits">0</strong></li>
+          <li>Total Prestiges: <strong id="stats-total-prestiges">0</strong></li>
+          <li>Crit chance: <strong id="stats-crit-chance">0%</strong></li>
+          <li>Crit multiplier: <strong id="stats-crit-multiplier">×0</strong></li>
+          <li>BPC multiplier: <strong id="stats-bpc-multiplier">0</strong></li>
+          <li>BPS multiplier: <strong id="stats-bps-multiplier">0</strong></li>
+          <li>Global multiplier: <strong id="stats-global-multiplier">0</strong></li>
+        </ul>
+      </section>
+
+      <section id="achievements-section" aria-label="Achievements">
+        <h2>Achievements</h2>
+        <div id="achievements-grid"></div>
+        <div id="achievements-list"></div>
+      </section>
+
+      <section id="highscores-section" aria-label="Local highscores">
+        <h2>Highscores</h2>
+        <div>
+          <h3>Top Boopers</h3>
+          <ol id="top-boopers-list"></ol>
+        </div>
+        <div>
+          <h3>Top Skins</h3>
+          <ol id="top-skins-list"></ol>
+        </div>
+      </section>
+
+      <section id="settings-section" aria-label="Settings">
+        <h2>Settings</h2>
+        <label class="settings-row">
+          <input type="checkbox" id="settings-sound" />
+          Sound effects
+        </label>
+        <label class="settings-row">
+          <input type="checkbox" id="settings-particles" />
+          Floating text / particles
+        </label>
+        <label class="settings-row">
+          <input type="checkbox" id="settings-shortnumbers" />
+          Short number format (1.2K, 3.4M)
+        </label>
+      </section>
+
+      <section id="share-section" aria-label="Share progress">
+        <h2>Share</h2>
+        <p>Copy a small brag message:</p>
+        <textarea id="share-text" rows="3" readonly></textarea>
+        <button id="share-copy-button" type="button">Copy to clipboard</button>
+        <p id="share-status"></p>
+      </section>
+
+      <section id="debug-section" aria-label="Debug tools">
+        <h2>Debug (test only)</h2>
+        <p>Wersja developerska: szybkie akcje do testowania pętli gry.</p>
+        <div class="debug-actions">
+          <button id="debug-add-boops" type="button">Dodaj +10 000 000 boops</button>
+          <button id="debug-reset" type="button">Hard reset save</button>
+        </div>
+      </section>
+
+      <section id="prestige-section" aria-label="Prestige">
+        <h2>Prestige</h2>
+        <p>Total Boops: <strong id="total-boops-value">0</strong></p>
+        <p>Boop Essence: <strong id="boop-essence-value">0</strong></p>
+        <p>Potential BE on reset: <strong id="prestige-gain-value">0</strong></p>
+        <p>Global multiplier: <strong id="global-multiplier-value">1.00</strong>x</p>
+        <button id="prestige-button" type="button" disabled>Ascend (Prestige)</button>
+      </section>
+
+      <section id="meta-perks-section" aria-label="Meta Tree">
+        <h2>Meta Perks</h2>
+        <p>
+          Boop Essence dostępne:
+          <strong id="meta-be-value">0</strong>
+        </p>
+        <div id="meta-perks-container"></div>
+      </section>
+
+      <section id="faction-section" aria-label="Factions and Totems">
+        <h2>Your Faction</h2>
+        <div id="faction-current">Brak wybranego totemu.</div>
+        <h3>Change Faction (on Prestige)</h3>
+        <div id="faction-choice-container"></div>
+      </section>
     </div>
 
     <div id="achievement-toast" aria-live="assertive"></div>
