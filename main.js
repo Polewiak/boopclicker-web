@@ -1594,7 +1594,6 @@ function renderClickUpgradesGrid() {
       upgrade.wasAffordable = false;
     }
     const unlocked = gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost);
-    const affordable = unlocked && !upgrade.purchased && gameState.boops >= upgrade.cost;
     const icon = document.createElement('div');
     icon.className = 'click-upgrade-icon upgrade-card';
     icon.id = `${upgrade.id}-card`;
@@ -1632,8 +1631,11 @@ function renderClickUpgradesGrid() {
 
     if (unlocked && !upgrade.purchased) {
       icon.addEventListener('click', () => {
-        if (affordable) {
-          buyBpcUpgrade(upgrade.id);
+        const latest = gameState.bpcUpgrades.find((u) => u.id === upgrade.id);
+        if (!latest || latest.purchased) return;
+        const canAfford = gameState.boops >= (latest.cost ?? latest.baseCost ?? 0);
+        if (canAfford) {
+          buyBpcUpgrade(latest.id);
         }
       });
     }
@@ -1662,8 +1664,7 @@ function renderAutoBoopers() {
   gameState.autoBoopers.forEach((auto, index) => {
     if (index > maxVisibleIndex) return;
     const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
-    const nextCost = getAutoBooperCost(auto);
-    const affordable = prevOwned && gameState.boops >= nextCost;
+      const nextCost = getAutoBooperCost(auto);
     const card = document.createElement('div');
     card.className = 'auto-booper-card upgrade-card';
     card.id = `${auto.id}-autocard`;
@@ -1696,16 +1697,7 @@ function renderAutoBoopers() {
     costEl.className = 'store-cost';
     costEl.textContent = `${formatNumber(nextCost)} boops`;
 
-    const buyButton = document.createElement('button');
-    buyButton.type = 'button';
-    buyButton.textContent = 'Buy';
-    buyButton.disabled = !affordable;
-    buyButton.addEventListener('click', () => {
-      if (!prevOwned) return;
-      buyAutoBooper(auto.id);
-    });
-
-    card.append(icon, main, costEl, buyButton);
+    card.append(icon, main, costEl);
 
     const showAutoTooltip = (event) => {
       const tooltip = ui.autoBooperTooltip;
@@ -1727,6 +1719,14 @@ function renderAutoBoopers() {
     card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
     card.addEventListener('mousemove', (event) => showAutoTooltip(event));
     card.addEventListener('mouseleave', hideUpgradeTooltips);
+
+    card.addEventListener('click', () => {
+      if (!prevOwned) return;
+      const currentCost = getAutoBooperCost(auto);
+      if (gameState.boops >= currentCost) {
+        buyAutoBooper(auto.id);
+      }
+    });
 
     fragment.appendChild(card);
   });
