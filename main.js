@@ -736,6 +736,17 @@ function markStoreDirty() {
   storeNeedsRender = true;
 }
 
+function hideUpgradeTooltips() {
+  if (ui.clickUpgradeTooltip) {
+    ui.clickUpgradeTooltip.classList.add('hidden');
+    ui.clickUpgradeTooltip.textContent = '';
+  }
+  if (ui.autoBooperTooltip) {
+    ui.autoBooperTooltip.classList.add('hidden');
+    ui.autoBooperTooltip.textContent = '';
+  }
+}
+
 function getUnlockedClickUpgradeCount() {
   return gameState.bpcUpgrades.filter(
     (upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost)
