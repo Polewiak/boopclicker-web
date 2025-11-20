@@ -21,6 +21,11 @@
           <div id="profile-display">
             <span id="profile-avatar" aria-hidden="true">🧸</span>
             <span id="profile-name">Anonymous</span>
+            <span id="profile-title-display" class="profile-title-badge">No Title</span>
+          </div>
+          <div id="profile-title-row">
+            <label for="profile-title-select">Title:</label>
+            <select id="profile-title-select"></select>
           </div>
           <div id="profile-edit">
             <input type="text" id="profile-name-input" placeholder="Your nick" aria-label="Player nickname" />
@@ -37,6 +42,13 @@
             <span id="top-skin-name">None</span>
             (<span id="top-skin-boops">0</span> boops)
           </p>
+        </section>
+
+        <section id="daily-box-section" aria-label="Daily lootbox">
+          <h2>Daily Lootbox</h2>
+          <p id="daily-box-status">Checking availability...</p>
+          <button id="daily-box-open-button" type="button">Open box</button>
+          <p id="daily-box-result"></p>
         </section>
 
         <section id="achievements-panel" aria-label="Achievements overview">

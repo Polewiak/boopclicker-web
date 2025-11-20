@@ -8,6 +8,16 @@ const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
+const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+const ALL_TITLES = [
+  { id: 'none', name: 'No Title' },
+  { id: 'cert_booper', name: 'Certified Booper' },
+  { id: 'critical_paw', name: 'Critical Paw' },
+  { id: 'himbo_specialist', name: 'Himbo Specialist' },
+  { id: 'snoot_mage', name: 'Snoot Mage' },
+  { id: 'boop_deity', name: 'Boop Deity' },
+];
 
 function formatNumber(value) {
   if (!gameState?.settings?.shortNumbers) {
@@ -18,6 +28,10 @@ function formatNumber(value) {
   if (abs >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
   if (abs >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
   return numberFormatter.format(value);
+}
+
+function getTitleById(id) {
+  return ALL_TITLES.find((title) => title.id === id) || ALL_TITLES[0];
 }
 
 const bpcUpgradesConfig = [
@@ -604,6 +618,8 @@ const gameState = {
   currentSkinId: 'player1',
   playerName: 'Anonymous',
   playerAvatar: '🧸',
+  playerTitleId: 'none',
+  unlockedTitleIds: ['none', 'cert_booper'],
   factions: factionConfig.map((faction) => ({ ...faction })),
   currentFaction: null,
   factionBonus: { crit: 0, bps: 0, bpc: 0 },
@@ -628,6 +644,8 @@ const gameState = {
   totalPrestiges: 0,
   totalAutoBoopers: 0,
   lastUpdate: Date.now(),
+  dailyBoxLastOpened: null,
+  dailyBoxAvailable: true,
 };
 
 let intervalId = null;
@@ -655,6 +673,8 @@ const ui = {
   metaBeValue: document.getElementById('meta-be-value'),
   profileName: document.getElementById('profile-name'),
   profileAvatar: document.getElementById('profile-avatar'),
+  profileTitle: document.getElementById('profile-title-display'),
+  profileTitleSelect: document.getElementById('profile-title-select'),
   currentSkinBoops: document.getElementById('current-skin-boops'),
   topSkinName: document.getElementById('top-skin-name'),
   topSkinBoops: document.getElementById('top-skin-boops'),
@@ -687,6 +707,9 @@ const ui = {
   settingsSound: document.getElementById('settings-sound'),
   settingsParticles: document.getElementById('settings-particles'),
   settingsShortNumbers: document.getElementById('settings-shortnumbers'),
+  dailyBoxStatus: document.getElementById('daily-box-status'),
+  dailyBoxResult: document.getElementById('daily-box-result'),
+  dailyBoxButton: document.getElementById('daily-box-open-button'),
 };
 
 const storeTooltip = {
@@ -883,8 +906,10 @@ function initGame() {
   loadGame();
   initSfx();
   initProfileUI();
+  initTitleUI();
   initSettingsUI();
   initShareUI();
+  initDailyBoxUI();
   renderFactionOverlay();
   if (!gameState.currentFaction) {
     showFactionOverlay();
@@ -946,6 +971,36 @@ function initProfileUI() {
   });
 }
 
+function renderTitleSelect() {
+  const select = ui.profileTitleSelect;
+  if (!select) return;
+
+  select.innerHTML = '';
+  (gameState.unlockedTitleIds || []).forEach((id) => {
+    const title = getTitleById(id);
+    if (!title) return;
+    const opt = document.createElement('option');
+    opt.value = title.id;
+    opt.textContent = title.name;
+    select.appendChild(opt);
+  });
+
+  select.value = gameState.playerTitleId || 'none';
+}
+
+function initTitleUI() {
+  const select = ui.profileTitleSelect;
+  if (!select) return;
+
+  renderTitleSelect();
+
+  select.addEventListener('change', () => {
+    gameState.playerTitleId = select.value;
+    saveGame();
+    updateUI();
+  });
+}
+
 function initSettingsUI() {
   const soundInput = ui.settingsSound;
   const particlesInput = ui.settingsParticles;
@@ -968,6 +1023,31 @@ function initSettingsUI() {
     gameState.settings.shortNumbers = shortNumbersInput.checked;
     saveGame();
     updateUI();
+  });
+}
+
+function initDailyBoxUI() {
+  const openBtn = ui.dailyBoxButton;
+  if (!openBtn) return;
+
+  openBtn.addEventListener('click', () => {
+    if (!gameState.dailyBoxAvailable) return;
+
+    const min = 10;
+    const max = 10000;
+    const reward = Math.floor(Math.random() * (max - min + 1)) + min;
+
+    gameState.boops += reward;
+    gameState.totalBoops = (gameState.totalBoops || 0) + reward;
+    gameState.dailyBoxLastOpened = Date.now();
+    gameState.dailyBoxAvailable = false;
+
+    saveGame();
+    updateUI();
+
+    if (ui.dailyBoxResult) {
+      ui.dailyBoxResult.textContent = `You opened the box and received ${formatNumber(reward)} boops!`;
+    }
   });
 }
 
@@ -1023,6 +1103,10 @@ function loadGame() {
       gameState.currentSkinId = savedCurrentSkinId;
     }
     getCurrentSkin();
+    gameState.playerTitleId = typeof data.playerTitleId === 'string' ? data.playerTitleId : 'none';
+    const loadedTitles = Array.isArray(data.unlockedTitleIds) ? data.unlockedTitleIds : ['none', 'cert_booper'];
+    const ensuredTitles = new Set([...loadedTitles, 'none', 'cert_booper']);
+    gameState.unlockedTitleIds = Array.from(ensuredTitles);
     gameState.bpcFlatBonus = typeof data.bpcFlatBonus === 'number' ? data.bpcFlatBonus : 0;
     gameState.totalClicks = Number(data.totalClicks) || 0;
     gameState.totalCrits = Number(data.totalCrits) || 0;
@@ -1046,6 +1130,8 @@ function loadGame() {
         bpc: Number(data.factionBonus.bpc) || 0,
       };
     }
+    gameState.dailyBoxLastOpened = data.dailyBoxLastOpened || null;
+    gameState.dailyBoxAvailable = data.dailyBoxAvailable ?? true;
   } catch (error) {
     console.warn('Nie udało się wczytać zapisu', error);
   }
@@ -1076,6 +1162,8 @@ function saveGame() {
     currentSkinId: gameState.currentSkinId,
     playerName: gameState.playerName,
     playerAvatar: gameState.playerAvatar,
+    playerTitleId: gameState.playerTitleId,
+    unlockedTitleIds: gameState.unlockedTitleIds,
     achievementsUnlocked: gameState.achievementsUnlocked,
     unlockedSkins: gameState.unlockedSkins,
     boopers: gameState.boopers,
@@ -1095,6 +1183,8 @@ function saveGame() {
     totalAutoBoopers: gameState.totalAutoBoopers,
     lastUpdate: gameState.lastUpdate || Date.now(),
     settings: gameState.settings,
+    dailyBoxLastOpened: gameState.dailyBoxLastOpened,
+    dailyBoxAvailable: gameState.dailyBoxAvailable,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
@@ -1412,6 +1502,50 @@ function updateUI() {
   renderFactions();
   updateStatsUI();
   updateAchievementsUI();
+  updateDailyBoxUI();
+}
+
+function updateDailyBoxState() {
+  const now = Date.now();
+  if (!gameState.dailyBoxLastOpened) {
+    gameState.dailyBoxAvailable = true;
+    return;
+  }
+  const elapsed = now - gameState.dailyBoxLastOpened;
+  gameState.dailyBoxAvailable = elapsed >= DAILY_BOX_COOLDOWN_MS;
+}
+
+function getDailyBoxRemainingMs() {
+  if (!gameState.dailyBoxLastOpened) return 0;
+  const elapsed = Date.now() - gameState.dailyBoxLastOpened;
+  const remaining = DAILY_BOX_COOLDOWN_MS - elapsed;
+  return Math.max(0, remaining);
+}
+
+function updateDailyBoxUI() {
+  updateDailyBoxState();
+  const statusEl = ui.dailyBoxStatus;
+  const openBtn = ui.dailyBoxButton;
+  if (!statusEl || !openBtn) return;
+
+  if (gameState.dailyBoxAvailable) {
+    statusEl.textContent = 'Box is ready! You can open it now.';
+    openBtn.disabled = false;
+  } else {
+    const remainingMs = getDailyBoxRemainingMs();
+    if (remainingMs <= 0) {
+      statusEl.textContent = 'Box is ready! You can open it now.';
+      openBtn.disabled = false;
+      gameState.dailyBoxAvailable = true;
+    } else {
+      const totalSeconds = Math.floor(remainingMs / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      statusEl.textContent = `Next box in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      openBtn.disabled = true;
+    }
+  }
 }
 
 function updatePrestigeUI() {
@@ -1761,6 +1895,11 @@ function updateProfileUI() {
   if (ui.profileAvatar) {
     ui.profileAvatar.textContent = gameState.playerAvatar || '🧸';
   }
+  if (ui.profileTitle) {
+    const titleObj = getTitleById(gameState.playerTitleId || 'none');
+    ui.profileTitle.textContent = titleObj?.name || 'No Title';
+  }
+  renderTitleSelect();
 }
 
 function updateSkinStatsUI() {
@@ -1848,6 +1987,7 @@ function updateBoopersLeaderboard() {
     name: gameState.playerName || 'Anonymous',
     avatar: gameState.playerAvatar || '🧸',
     totalBoops: Math.floor(gameState.totalBoops || 0),
+    playerTitleId: gameState.playerTitleId || 'none',
   };
   const list = Array.isArray(gameState.boopers) ? [...gameState.boopers] : [];
   const existingIndex = list.findIndex(
@@ -1924,7 +2064,9 @@ function renderHighscores() {
     boopersList.innerHTML = '';
     (gameState.boopers || []).forEach((entry) => {
       const li = document.createElement('li');
-      li.textContent = `${entry.avatar || ''} ${entry.name || 'Anon'} – ${formatNumber(
+      const titleObj = getTitleById(entry.playerTitleId || 'none');
+      const titleText = titleObj ? titleObj.name : 'No Title';
+      li.textContent = `${entry.avatar || ''} ${entry.name || 'Anon'} – [${titleText}] – ${formatNumber(
         entry.totalBoops || 0
       )} boops`;
       boopersList.appendChild(li);
