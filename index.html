@@ -7,11 +7,9 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div id="top-bar">
-      <div id="top-bar-left">
-        <span id="top-bar-logo">Boopclicker</span>
-      </div>
-      <div id="top-bar-right" aria-label="Navigation shortcuts">
+    <div id="top-bar" aria-label="Navigation shortcuts">
+      <span id="top-bar-logo">Boopclicker</span>
+      <div id="top-bar-icons">
         <button class="top-bar-icon" type="button" data-modal="profile-section" title="Profile">👤</button>
         <button class="top-bar-icon" type="button" data-modal="skin-stats-section" title="Skin stats">🎨</button>
         <button class="top-bar-icon" type="button" data-modal="stats-panel" title="Stats">📊</button>
@@ -47,19 +45,21 @@
       </section>
 
       <section id="shop-panel" aria-label="Sklep z upgrade'ami">
-        <section id="bpc-upgrades" aria-label="Click upgrades">
+        <section id="click-upgrades-section" aria-label="Click upgrades">
           <h2>Click Upgrades</h2>
-          <div id="click-upgrades-container" class="store-container"></div>
+          <div id="click-upgrades-grid"></div>
+          <div id="click-upgrade-tooltip" class="upgrade-tooltip hidden"></div>
         </section>
 
         <section id="bps-upgrades" aria-label="Auto-Boopers">
           <h2>Auto-Boopers</h2>
           <div id="auto-upgrades-container" class="store-container"></div>
+          <div id="auto-booper-tooltip" class="upgrade-tooltip hidden"></div>
         </section>
 
         <section id="skins-shop" aria-label="Skins Shop">
           <h2>Skins Shop</h2>
-          <div id="skins-shop-list"></div>
+          <div id="skins-grid"></div>
           <div id="unlock-with-code">
             <h3>Unlock custom skin</h3>
             <input type="text" id="skin-code-input" placeholder="Enter code" aria-label="Skin unlock code" />
@@ -68,12 +68,6 @@
           </div>
         </section>
       </section>
-    </div>
-
-    <div id="store-tooltip" class="hidden" role="status" aria-live="polite">
-      <div id="store-tooltip-name"></div>
-      <div id="store-tooltip-description"></div>
-      <div id="store-tooltip-extra"></div>
     </div>
 
     <div class="modal-backdrop hidden" id="modal-backdrop" role="dialog" aria-modal="true">

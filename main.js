@@ -665,8 +665,10 @@ const ui = {
   boopButton: document.getElementById('boop-button'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
-  clickUpgradesContainer: document.getElementById('click-upgrades-container'),
+  clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
+  clickUpgradeTooltip: document.getElementById('click-upgrade-tooltip'),
   autoUpgradesContainer: document.getElementById('auto-upgrades-container'),
+  autoBooperTooltip: document.getElementById('auto-booper-tooltip'),
   metaPerksContainer: document.getElementById('meta-perks-container'),
   metaBeValue: document.getElementById('meta-be-value'),
   profileName: document.getElementById('profile-name'),
@@ -676,7 +678,7 @@ const ui = {
   currentSkinBoops: document.getElementById('current-skin-boops'),
   topSkinName: document.getElementById('top-skin-name'),
   topSkinBoops: document.getElementById('top-skin-boops'),
-  skinsShopList: document.getElementById('skins-shop-list'),
+  skinsGrid: document.getElementById('skins-grid'),
   skinCodeInput: document.getElementById('skin-code-input'),
   skinCodeButton: document.getElementById('skin-code-button'),
   skinCodeMessage: document.getElementById('skin-code-message'),
@@ -714,13 +716,6 @@ const ui = {
   dailyBoxFloatTimer: document.getElementById('daily-box-float-timer'),
 };
 
-const storeTooltip = {
-  root: document.getElementById('store-tooltip'),
-  name: document.getElementById('store-tooltip-name'),
-  description: document.getElementById('store-tooltip-description'),
-  extra: document.getElementById('store-tooltip-extra'),
-};
-
 const sfx = {
   boop: null,
   crit: null,
@@ -748,107 +743,109 @@ function getUnlockedClickUpgradeCount() {
 }
 
 function updateStoreUI() {
-  if (getUnlockedClickUpgradeCount() !== lastUnlockedClickCount) {
+  const unlockedCount = getUnlockedClickUpgradeCount();
+  if (unlockedCount !== lastUnlockedClickCount) {
     storeNeedsRender = true;
   }
 
   if (storeNeedsRender) {
     renderUpgrades();
     storeNeedsRender = false;
-  } else {
-    refreshStoreRowAffordability();
   }
 
   updateUpgradeCardVisuals();
 }
 
-function refreshStoreRowAffordability() {
-  const rows = document.querySelectorAll('.store-row');
-  if (!rows.length) {
-    return;
-  }
-
-  rows.forEach((row) => {
-    if (row.classList.contains('disabled')) {
-      row.classList.remove('affordable');
-      return;
-    }
-
-    const { id, type } = row.dataset;
-    if (!id || !type) {
-      return;
-    }
-
-    let canAfford = false;
-    if (type === 'click') {
-      const upgrade = gameState.bpcUpgrades.find((item) => item.id === id);
-      if (upgrade) {
-        canAfford = gameState.boops >= upgrade.cost;
-      }
-    } else if (type === 'auto') {
-      const booper = gameState.autoBoopers.find((item) => item.id === id);
-      if (booper) {
-        const nextCost = getAutoBooperCost(booper);
-        canAfford = gameState.boops >= nextCost;
-        const ownedEl = row.querySelector('.store-sub');
-        if (ownedEl) {
-          ownedEl.textContent = `Owned: ${formatNumber(booper.owned || 0)}`;
-        }
-        const costEl = row.querySelector('.store-cost');
-        if (costEl) {
-          costEl.textContent = `${formatNumber(nextCost)} boops`;
-        }
-      }
-    }
-
-    row.classList.toggle('affordable', canAfford);
-  });
-}
-
 function updateUpgradeCardVisuals() {
   const boops = gameState.boops;
+  const visibleClicks = gameState.bpcUpgrades.slice(0, 10);
 
-  gameState.bpcUpgrades.forEach((upgrade) => {
+  visibleClicks.forEach((upgrade) => {
     if (typeof upgrade.wasAffordable !== 'boolean') {
       upgrade.wasAffordable = false;
     }
     const card = document.getElementById(`${upgrade.id}-card`);
     if (!card) return;
+    const unlocked = gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost);
+    const affordable = unlocked && !upgrade.purchased && boops >= upgrade.cost;
 
-    const affordable = !upgrade.purchased && boops >= upgrade.cost;
-    card.classList.remove('upgrade-available', 'upgrade-unaffordable');
+    card.classList.remove('upgrade-available', 'upgrade-unaffordable', 'upgrade-just-unlocked', 'locked');
+
+    if (upgrade.purchased) {
+      card.classList.add('purchased');
+      return;
+    }
+
+    if (!unlocked) {
+      card.classList.add('locked', 'upgrade-unaffordable');
+      return;
+    }
 
     if (affordable) {
       card.classList.add('upgrade-available');
       if (!upgrade.wasAffordable) {
         card.classList.add('upgrade-just-unlocked');
         upgrade.wasAffordable = true;
-        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 1000);
+        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 800);
       }
     } else {
       card.classList.add('upgrade-unaffordable');
     }
   });
 
-  gameState.autoBoopers.forEach((booper) => {
+  let maxOwnedIndex = -1;
+  gameState.autoBoopers.forEach((auto, idx) => {
+    if ((auto.owned || 0) > 0 && idx > maxOwnedIndex) {
+      maxOwnedIndex = idx;
+    }
+  });
+  const maxVisibleIndex = Math.min(gameState.autoBoopers.length - 1, maxOwnedIndex + 2);
+
+  gameState.autoBoopers.forEach((booper, index) => {
     if (typeof booper.wasAffordable !== 'boolean') {
       booper.wasAffordable = false;
     }
-    const card = document.getElementById(`${booper.id}-card`);
+    if (index > maxVisibleIndex) return;
+    const card = document.getElementById(`${booper.id}-autocard`);
     if (!card) return;
 
-    const affordable = gameState.boops >= getAutoBooperCost(booper);
-    card.classList.remove('upgrade-available', 'upgrade-unaffordable');
+    const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
+    const affordable = prevOwned && gameState.boops >= getAutoBooperCost(booper);
+
+    card.classList.remove('upgrade-available', 'upgrade-unaffordable', 'upgrade-just-unlocked', 'locked');
+    const ownedLabel = card.querySelector('.store-sub');
+    if (ownedLabel) {
+      ownedLabel.textContent = `Owned: ${formatNumber(booper.owned || 0)}`;
+    }
+    const costLabel = card.querySelector('.store-cost');
+    if (costLabel) {
+      costLabel.textContent = `${formatNumber(getAutoBooperCost(booper))} boops`;
+    }
+    const button = card.querySelector('button');
+
+    if ((booper.owned || 0) > 0) {
+      card.classList.add('purchased');
+      if (button) button.disabled = false;
+      return;
+    }
+
+    if (!prevOwned) {
+      card.classList.add('locked', 'upgrade-unaffordable');
+      if (button) button.disabled = true;
+      return;
+    }
 
     if (affordable) {
       card.classList.add('upgrade-available');
       if (!booper.wasAffordable) {
         card.classList.add('upgrade-just-unlocked');
         booper.wasAffordable = true;
-        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 1000);
+        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 800);
       }
+      if (button) button.disabled = false;
     } else {
       card.classList.add('upgrade-unaffordable');
+      if (button) button.disabled = true;
     }
   });
 }
@@ -889,7 +886,7 @@ function openModal(targetId) {
     return;
   }
 
-  hideStoreTooltip();
+  hideUpgradeTooltips();
   modalControls.content.appendChild(target);
   if (targetId === 'stats-panel' || targetId === 'achievements-section') {
     updateStatsUI();
@@ -1565,173 +1562,72 @@ function updatePrestigeUI() {
   }
 }
 
-function hideStoreTooltip() {
-  storeTooltip.root?.classList.add('hidden');
-}
-
-function showStoreTooltip(data) {
-  if (!storeTooltip.root || !storeTooltip.name || !storeTooltip.description || !storeTooltip.extra) {
-    return;
-  }
-  storeTooltip.name.textContent = data.name || '';
-  storeTooltip.description.textContent = data.description || '';
-  storeTooltip.extra.textContent = data.extra || '';
-  storeTooltip.root.classList.remove('hidden');
-}
-
-function attachStoreRowEvents(row, data) {
-  if (!storeTooltip.root) return;
-  const updateTooltipPosition = (event) => {
-    if (!storeTooltip.root) return;
-    const offset = 16;
-    storeTooltip.root.style.left = `${event.pageX + offset}px`;
-    storeTooltip.root.style.top = `${event.pageY + offset}px`;
-  };
-
-  row.addEventListener('mouseenter', (event) => {
-    showStoreTooltip(data);
-    updateTooltipPosition(event);
-  });
-  row.addEventListener('mousemove', updateTooltipPosition);
-  row.addEventListener('mouseleave', hideStoreTooltip);
-  row.addEventListener('focus', (event) => {
-    showStoreTooltip(data);
-    const target = event.target;
-    if (target instanceof HTMLElement && storeTooltip.root) {
-      const rect = target.getBoundingClientRect();
-      storeTooltip.root.style.left = `${rect.right + 12}px`;
-      storeTooltip.root.style.top = `${rect.top + window.scrollY}px`;
-    }
-  });
-  row.addEventListener('blur', hideStoreTooltip);
-  row.addEventListener('click', () => handleStoreRowPurchase(data));
-  row.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleStoreRowPurchase(data);
-    }
-  });
-}
-
-function handleStoreRowPurchase(data) {
-  if (data.disabled) {
-    return;
-  }
-  if (data.type === 'click') {
-    buyBpcUpgrade(data.id);
-  } else if (data.type === 'auto') {
-    buyAutoBooper(data.id);
-  }
-}
-
-function createStoreRow({ icon, name, subLabel, costLabel, dataset, affordable, disabled, tooltipData }) {
-  const row = document.createElement('div');
-  row.className = 'store-row upgrade-card';
-  row.id = `${dataset.id}-card`;
-  if (affordable) {
-    row.classList.add('affordable');
-  }
-  if (disabled) {
-    row.classList.add('disabled');
-    row.setAttribute('aria-disabled', 'true');
-  }
-  row.dataset.id = dataset.id;
-  row.dataset.type = dataset.type;
-  row.setAttribute('tabindex', '0');
-  row.setAttribute('role', 'button');
-  row.setAttribute('aria-label', `${name} (${costLabel})`);
-
-  const iconEl = document.createElement('div');
-  iconEl.className = 'store-icon';
-  iconEl.textContent = icon;
-
-  const main = document.createElement('div');
-  main.className = 'store-main';
-  const nameEl = document.createElement('div');
-  nameEl.className = 'store-name';
-  nameEl.textContent = name;
-  main.appendChild(nameEl);
-  if (subLabel) {
-    const subEl = document.createElement('div');
-    subEl.className = 'store-sub';
-    subEl.textContent = subLabel;
-    main.appendChild(subEl);
-  }
-
-  const costEl = document.createElement('div');
-  costEl.className = 'store-cost';
-  costEl.textContent = costLabel;
-
-  row.append(iconEl, main, costEl);
-  attachStoreRowEvents(row, { ...tooltipData, type: dataset.type, id: dataset.id, disabled });
-  return row;
-}
+// Deprecated store tooltip hooks replaced by icon/grid tooltips.
 
 function renderUpgrades() {
-  hideStoreTooltip();
-  renderBpcUpgrades();
+  hideUpgradeTooltips();
+  renderClickUpgradesGrid();
   renderAutoBoopers();
 }
 
-function renderBpcUpgrades() {
-  const container = ui.clickUpgradesContainer;
+function renderClickUpgradesGrid() {
+  const container = ui.clickUpgradesGrid;
   if (!container) return;
   container.innerHTML = '';
 
-  const unlocked = gameState.bpcUpgrades.filter(
-    (upgrade) => gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost)
-  );
-  lastUnlockedClickCount = unlocked.length;
-  const locked = gameState.bpcUpgrades.filter(
-    (upgrade) => !upgrade.purchased && gameState.totalBoops < (upgrade.unlockAt ?? upgrade.cost)
-  );
+  const visibleUpgrades = gameState.bpcUpgrades.slice(0, 10);
+  lastUnlockedClickCount = getUnlockedClickUpgradeCount();
 
-  if (unlocked.length === 0) {
-    const lockedInfo = document.createElement('p');
-    lockedInfo.className = 'locked-upgrade';
-    lockedInfo.textContent = 'Klikane ulepszenia odblokują się po zdobyciu większej liczby boops.';
-    container.appendChild(lockedInfo);
-    return;
-  }
+  visibleUpgrades.forEach((upgrade, index) => {
+    if (typeof upgrade.wasAffordable === 'undefined') {
+      upgrade.wasAffordable = false;
+    }
+    const unlocked = gameState.totalBoops >= (upgrade.unlockAt ?? upgrade.cost);
+    const affordable = unlocked && !upgrade.purchased && gameState.boops >= upgrade.cost;
+    const icon = document.createElement('div');
+    icon.className = 'click-upgrade-icon upgrade-card';
+    icon.id = `${upgrade.id}-card`;
+    icon.dataset.id = upgrade.id;
+    icon.dataset.type = 'click';
+    const iconSymbol = upgrade.icon || '★';
+    icon.textContent = unlocked ? iconSymbol : '？';
 
-  const fragment = document.createDocumentFragment();
-  unlocked.forEach((upgrade) => {
-    const canAfford = !upgrade.purchased && gameState.boops >= upgrade.cost;
-    const row = createStoreRow({
-      icon: '🐾',
-      name: upgrade.name,
-      subLabel: upgrade.purchased ? 'Purchased' : 'Unlocked',
-      costLabel: upgrade.purchased
-        ? 'Purchased'
-        : `${formatNumber(upgrade.cost)} boops`,
-      dataset: { id: upgrade.id, type: 'click' },
-      affordable: canAfford,
-      disabled: upgrade.purchased,
-      tooltipData: {
-        name: upgrade.name,
-        description: upgrade.description,
-        extra: `+${Math.round((upgrade.bpcMultiplierBonus || 0) * 100)}% BPC`,
-      },
-    });
-    fragment.appendChild(row);
+    if (upgrade.purchased) {
+      icon.classList.add('purchased');
+    } else if (unlocked) {
+      icon.classList.add('available');
+    } else {
+      icon.classList.add('locked');
+    }
+
+    const showTooltip = (event) => {
+      const tooltip = ui.clickUpgradeTooltip;
+      if (!tooltip) return;
+      if (!unlocked) {
+        tooltip.textContent = 'Future upgrade';
+      } else {
+        tooltip.innerHTML = `<strong>${upgrade.name}</strong><br>${upgrade.description}<br>Cost: ${formatNumber(
+          upgrade.cost
+        )} boops<br>+${Math.round((upgrade.bpcMultiplierBonus || 0) * 100)}% BPC`;
+      }
+      tooltip.classList.remove('hidden');
+      tooltip.style.left = `${event.pageX + 12}px`;
+      tooltip.style.top = `${event.pageY + 12}px`;
+    };
+
+    icon.addEventListener('mouseenter', (event) => showTooltip(event));
+    icon.addEventListener('mousemove', (event) => showTooltip(event));
+    icon.addEventListener('mouseleave', hideUpgradeTooltips);
+
+    if (unlocked && !upgrade.purchased) {
+      icon.addEventListener('click', () => {
+        if (affordable) {
+          buyBpcUpgrade(upgrade.id);
+        }
+      });
+    }
+    container.appendChild(icon);
   });
-
-  container.appendChild(fragment);
-
-  if (locked.length > 0) {
-    const lockedWrapper = document.createElement('div');
-    lockedWrapper.className = 'locked-upgrade';
-    const lockedTitle = document.createElement('p');
-    lockedTitle.textContent = 'Następne ulepszenia odblokują się przy:';
-    lockedWrapper.appendChild(lockedTitle);
-    locked.forEach((upgrade) => {
-      const item = document.createElement('p');
-      const threshold = formatNumber(upgrade.unlockAt ?? upgrade.cost);
-      item.textContent = `${upgrade.name} – ${threshold} total boops`;
-      lockedWrapper.appendChild(item);
-    });
-    container.appendChild(lockedWrapper);
-  }
 }
 
 function renderAutoBoopers() {
@@ -1739,61 +1635,130 @@ function renderAutoBoopers() {
   if (!container) return;
   container.innerHTML = '';
 
+  let maxOwnedIndex = -1;
+  gameState.autoBoopers.forEach((auto, index) => {
+    if ((auto.owned || 0) > 0 && index > maxOwnedIndex) {
+      maxOwnedIndex = index;
+    }
+    if (typeof auto.wasAffordable === 'undefined') {
+      auto.wasAffordable = false;
+    }
+  });
+
+  const maxVisibleIndex = Math.min(gameState.autoBoopers.length - 1, maxOwnedIndex + 2);
   const fragment = document.createDocumentFragment();
-  gameState.autoBoopers.forEach((booper) => {
-    const nextCost = getAutoBooperCost(booper);
-    const canAfford = gameState.boops >= nextCost;
-    const row = createStoreRow({
-      icon: '🏭',
-      name: booper.name,
-      subLabel: `Owned: ${formatNumber(booper.owned || 0)}`,
-      costLabel: `${formatNumber(nextCost)} boops`,
-      dataset: { id: booper.id, type: 'auto' },
-      affordable: canAfford,
-      disabled: false,
-      tooltipData: {
-        name: booper.name,
-        description: booper.description,
-        extra: `+${formatNumber(booper.baseBps)} BPS / szt.`,
-      },
+
+  gameState.autoBoopers.forEach((auto, index) => {
+    if (index > maxVisibleIndex) return;
+    const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
+    const nextCost = getAutoBooperCost(auto);
+    const affordable = prevOwned && gameState.boops >= nextCost;
+    const card = document.createElement('div');
+    card.className = 'auto-booper-card upgrade-card';
+    card.id = `${auto.id}-autocard`;
+    card.dataset.id = auto.id;
+    card.dataset.index = String(index);
+
+    if ((auto.owned || 0) > 0) {
+      card.classList.add('purchased');
+    } else if (prevOwned) {
+      card.classList.add('upgrade-available');
+    } else {
+      card.classList.add('locked');
+    }
+
+    const icon = document.createElement('div');
+    icon.className = 'store-icon';
+    icon.textContent = auto.icon || '🏭';
+
+    const main = document.createElement('div');
+    main.className = 'store-main';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'store-name';
+    nameEl.textContent = auto.name;
+    const ownedEl = document.createElement('div');
+    ownedEl.className = 'store-sub';
+    ownedEl.textContent = `Owned: ${formatNumber(auto.owned || 0)}`;
+    main.append(nameEl, ownedEl);
+
+    const costEl = document.createElement('div');
+    costEl.className = 'store-cost';
+    costEl.textContent = `${formatNumber(nextCost)} boops`;
+
+    const buyButton = document.createElement('button');
+    buyButton.type = 'button';
+    buyButton.textContent = 'Buy';
+    buyButton.disabled = !affordable;
+    buyButton.addEventListener('click', () => {
+      if (!prevOwned) return;
+      buyAutoBooper(auto.id);
     });
-    fragment.appendChild(row);
+
+    card.append(icon, main, costEl, buyButton);
+
+    const showAutoTooltip = (event) => {
+      const tooltip = ui.autoBooperTooltip;
+      if (!tooltip) return;
+      if (!prevOwned && (auto.owned || 0) === 0) {
+        tooltip.textContent = 'Unlock previous tier to view details';
+      } else {
+        const unitBps = formatNumber(auto.baseBps);
+        const totalBps = formatNumber(getAutoBooperBps(auto));
+        tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(
+          nextCost
+        )} boops<br>+${unitBps} BPS per unit (total ${totalBps})`;
+      }
+      tooltip.classList.remove('hidden');
+      tooltip.style.left = `${event.pageX + 12}px`;
+      tooltip.style.top = `${event.pageY + 12}px`;
+    };
+
+    card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
+    card.addEventListener('mousemove', (event) => showAutoTooltip(event));
+    card.addEventListener('mouseleave', hideUpgradeTooltips);
+
+    fragment.appendChild(card);
   });
 
   container.appendChild(fragment);
 }
 
 function renderSkinsShop() {
-  const list = ui.skinsShopList;
-  if (!list) return;
-  list.innerHTML = '';
+  const grid = ui.skinsGrid;
+  if (!grid) return;
+  grid.innerHTML = '';
 
-  const fragment = document.createDocumentFragment();
   const visibleSkins = gameState.skins.filter((skin) => skin.public || skin.owned);
+  const fragment = document.createDocumentFragment();
 
   visibleSkins.forEach((skin) => {
-    const card = document.createElement('article');
-    card.className = 'skin-card';
-    if (skin.owned) {
-      card.classList.add('owned');
+    const tile = document.createElement('article');
+    tile.className = 'skin-tile';
+    if (skin.id === gameState.currentSkinId) {
+      tile.classList.add('equipped');
     }
 
     const header = document.createElement('div');
-    header.className = 'skin-card-header';
-    const avatar = document.createElement('span');
-    avatar.className = 'skin-avatar';
+    header.className = 'skin-tile-header';
+    const avatar = document.createElement('div');
+    avatar.className = 'skin-tile-avatar';
     avatar.textContent = skin.avatar || '✨';
-    const title = document.createElement('div');
-    title.className = 'skin-name';
-    title.textContent = skin.name;
-    header.append(avatar, title);
+    const name = document.createElement('div');
+    name.className = 'skin-tile-name';
+    name.textContent = skin.name;
+    header.append(avatar, name);
+
+    const meta = document.createElement('div');
+    meta.className = 'skin-tile-meta';
+    meta.textContent = skin.owned ? 'Owned' : 'Not owned';
 
     const boopsLine = document.createElement('div');
-    boopsLine.className = 'skin-boops';
+    boopsLine.className = 'skin-tile-meta';
     boopsLine.textContent = `Boops: ${formatNumber(skin.boops || 0)}`;
 
-    const actions = document.createElement('div');
-    actions.className = 'skin-actions';
+    const footer = document.createElement('div');
+    footer.className = 'skin-tile-footer';
+    const actionWrap = document.createElement('div');
 
     if (skin.owned) {
       const equipButton = document.createElement('button');
@@ -1801,26 +1766,33 @@ function renderSkinsShop() {
       equipButton.textContent = skin.id === gameState.currentSkinId ? 'Equipped' : 'Equip';
       equipButton.disabled = skin.id === gameState.currentSkinId;
       equipButton.addEventListener('click', () => equipSkin(skin.id));
-      actions.appendChild(equipButton);
+      actionWrap.appendChild(equipButton);
+      if (skin.id === gameState.currentSkinId) {
+        const badge = document.createElement('span');
+        badge.className = 'equipped-label';
+        badge.textContent = 'Equipped';
+        footer.appendChild(badge);
+      }
     } else if (skin.unlockCost != null) {
       const buyButton = document.createElement('button');
       buyButton.type = 'button';
       buyButton.textContent = `Buy (${formatNumber(skin.unlockCost)} boops)`;
       buyButton.disabled = gameState.boops < skin.unlockCost;
       buyButton.addEventListener('click', () => buySkinWithBoops(skin.id));
-      actions.appendChild(buyButton);
+      actionWrap.appendChild(buyButton);
     } else if (skin.unlockCode) {
-      const label = document.createElement('p');
-      label.className = 'skin-locked-label';
-      label.textContent = 'Unlockable by code';
-      actions.appendChild(label);
+      const label = document.createElement('span');
+      label.className = 'skin-tile-meta';
+      label.textContent = 'Unlock via code';
+      actionWrap.appendChild(label);
     }
 
-    card.append(header, boopsLine, actions);
-    fragment.appendChild(card);
+    footer.appendChild(actionWrap);
+    tile.append(header, meta, boopsLine, footer);
+    fragment.appendChild(tile);
   });
 
-  list.appendChild(fragment);
+  grid.appendChild(fragment);
 }
 
 function renderMetaPerks() {
@@ -2252,7 +2224,9 @@ function buyBpcUpgrade(id) {
 function buyAutoBooper(id) {
   const booper = gameState.autoBoopers.find((item) => item.id === id);
   const cost = booper ? getAutoBooperCost(booper) : 0;
-  if (!booper || gameState.boops < cost) {
+  const index = booper ? gameState.autoBoopers.indexOf(booper) : -1;
+  const prevOwned = index <= 0 || (gameState.autoBoopers[index - 1]?.owned || 0) > 0;
+  if (!booper || gameState.boops < cost || !prevOwned) {
     return;
   }
 
@@ -2431,7 +2405,10 @@ function spawnFloatingText(text, extraClass) {
 
 function flashStoreRow(id) {
   if (!id) return;
-  const row = document.querySelector(`.store-row[data-id="${id}"]`);
+  const row =
+    document.getElementById(`${id}-card`) ||
+    document.getElementById(`${id}-autocard`) ||
+    document.querySelector(`[data-id="${id}"]`);
   if (!row) return;
   row.classList.remove('purchased-flash');
   void row.offsetWidth;
