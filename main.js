@@ -344,6 +344,7 @@ const autoBoopersConfig = [
     id: 'feralToaster',
     name: 'Feral Toaster',
     description: 'A slightly possessed toaster that boops whenever something pops.',
+    icon: '🐭',
     owned: 0,
     baseCost: 60,
     costGrowth: 1.15,
@@ -354,6 +355,7 @@ const autoBoopersConfig = [
     id: 'overworkedFoxIntern',
     name: 'Overworked Fox Intern',
     description: 'Fox intern clicking boop forms all night for exposure.',
+    icon: '🐱',
     owned: 0,
     baseCost: 300,
     costGrowth: 1.15,
@@ -364,6 +366,7 @@ const autoBoopersConfig = [
     id: 'wolfgirlCallCenter',
     name: 'Wolfgirl Call Center',
     description: "Entire call center of wolfgirls on headsets saying 'boop?' all day.",
+    icon: '🐶',
     owned: 0,
     baseCost: 2000,
     costGrowth: 1.15,
@@ -374,6 +377,7 @@ const autoBoopersConfig = [
     id: 'boomerangOtterCrew',
     name: 'Boomerang Otter Crew',
     description: 'They boop you, you boop them, boops come back around.',
+    icon: '🦊',
     owned: 0,
     baseCost: 12_000,
     costGrowth: 1.15,
@@ -384,6 +388,7 @@ const autoBoopersConfig = [
     id: 'hyperHuskyStreamer',
     name: 'Hyperactive Husky Streamer',
     description: '24/7 chaos stream where chat redeems boops every second.',
+    icon: '🐻',
     owned: 0,
     baseCost: 60_000,
     costGrowth: 1.15,
@@ -394,6 +399,7 @@ const autoBoopersConfig = [
     id: 'catgirlCafeShift',
     name: 'Catgirl Café Shift',
     description: 'Every order is served with a complimentary nose boop.',
+    icon: '🐼',
     owned: 0,
     baseCost: 300_000,
     costGrowth: 1.15,
@@ -404,6 +410,7 @@ const autoBoopersConfig = [
     id: 'nightshiftRaccoons',
     name: 'Nightshift Security Raccoons',
     description: 'They patrol all night and boop anything that moves.',
+    icon: '🐯',
     owned: 0,
     baseCost: 1_500_000,
     costGrowth: 1.15,
@@ -414,6 +421,7 @@ const autoBoopersConfig = [
     id: 'neonFoxRave',
     name: 'Neon Fox Rave',
     description: 'Strobe lights, loud music, every beat is another boop.',
+    icon: '🐨',
     owned: 0,
     baseCost: 8_000_000,
     costGrowth: 1.15,
@@ -424,6 +432,7 @@ const autoBoopersConfig = [
     id: 'dragonConBooth',
     name: 'Dragon Convention Booth',
     description: 'Huge con booth where the queue is only for nose boops.',
+    icon: '🐷',
     owned: 0,
     baseCost: 40_000_000,
     costGrowth: 1.15,
@@ -434,6 +443,7 @@ const autoBoopersConfig = [
     id: 'corporateMascots',
     name: 'Corporate Fursuit Mascots',
     description: 'Brand deals and boop campaigns across the city.',
+    icon: '🐸',
     owned: 0,
     baseCost: 200_000_000,
     costGrowth: 1.15,
@@ -444,6 +454,7 @@ const autoBoopersConfig = [
     id: 'interstellarPawMail',
     name: 'Interstellar Paw-mail Service',
     description: 'Every delivered package requires a confirmation boop.',
+    icon: '🐔',
     owned: 0,
     baseCost: 1_000_000_000,
     costGrowth: 1.15,
@@ -454,6 +465,7 @@ const autoBoopersConfig = [
     id: 'parallelPawLab',
     name: 'Parallel Universe Paw-Lab',
     description: 'Lab that connects to parallel worlds and imports their boops.',
+    icon: '🐵',
     owned: 0,
     baseCost: 6_000_000_000,
     costGrowth: 1.15,
@@ -464,6 +476,7 @@ const autoBoopersConfig = [
     id: 'quantumBoopCollider',
     name: 'Quantum Boop Collider',
     description: 'Smashes particles together to discover new, denser boops.',
+    icon: '🐙',
     owned: 0,
     baseCost: 40_000_000_000,
     costGrowth: 1.15,
@@ -474,6 +487,7 @@ const autoBoopersConfig = [
     id: 'floofCouncil',
     name: 'Transdimensional Floof Council',
     description: 'Ancient beings deciding the fate of all boops across realities.',
+    icon: '🐲',
     owned: 0,
     baseCost: 250_000_000_000,
     costGrowth: 1.15,
@@ -484,6 +498,7 @@ const autoBoopersConfig = [
     id: 'cosmicBoopEngine',
     name: 'Cosmic Boop Engine',
     description: 'A singularity that converts pure fluff into infinite boops.',
+    icon: '🌌',
     owned: 0,
     baseCost: 1_000_000_000_000,
     costGrowth: 1.15,
@@ -834,62 +849,72 @@ function updateUpgradeCardVisuals() {
     }
   });
 
-  let maxOwnedIndex = -1;
-  gameState.autoBoopers.forEach((auto, idx) => {
-    if ((auto.owned || 0) > 0 && idx > maxOwnedIndex) {
-      maxOwnedIndex = idx;
-    }
-  });
-  const maxVisibleIndex = Math.min(gameState.autoBoopers.length - 1, maxOwnedIndex + 2);
-
-  gameState.autoBoopers.forEach((booper, index) => {
-    if (typeof booper.wasAffordable !== 'boolean') {
-      booper.wasAffordable = false;
-    }
-    if (index > maxVisibleIndex) return;
-    const card = document.getElementById(`${booper.id}-autocard`);
-    if (!card) return;
-
-    const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
-    const affordable = prevOwned && gameState.boops >= getAutoBooperCost(booper);
-
-    card.classList.remove('upgrade-available', 'upgrade-unaffordable', 'upgrade-just-unlocked', 'locked');
-    const ownedLabel = card.querySelector('.store-sub');
-    if (ownedLabel) {
-      ownedLabel.textContent = `Owned: ${formatNumber(booper.owned || 0)}`;
-    }
-    const costLabel = card.querySelector('.store-cost');
-    if (costLabel) {
-      costLabel.textContent = `${formatNumber(getAutoBooperCost(booper))} boops`;
-    }
-    const button = card.querySelector('button');
-
-    if ((booper.owned || 0) > 0) {
-      card.classList.add('purchased');
-      if (button) button.disabled = false;
-      return;
-    }
-
-    if (!prevOwned) {
-      card.classList.add('locked', 'upgrade-unaffordable');
-      if (button) button.disabled = true;
-      return;
-    }
-
-    if (affordable) {
-      card.classList.add('upgrade-available');
-      if (!booper.wasAffordable) {
-        card.classList.add('upgrade-just-unlocked');
-        booper.wasAffordable = true;
-        setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 800);
+    let maxOwnedIndex = -1;
+    gameState.autoBoopers.forEach((auto, idx) => {
+      if ((auto.owned || 0) > 0 && idx > maxOwnedIndex) {
+        maxOwnedIndex = idx;
       }
-      if (button) button.disabled = false;
-    } else {
-      card.classList.add('upgrade-unaffordable');
-      if (button) button.disabled = true;
-    }
-  });
-}
+    });
+
+    gameState.autoBoopers.forEach((booper, index) => {
+      if (typeof booper.wasAffordable !== 'boolean') {
+        booper.wasAffordable = false;
+      }
+      const card = document.getElementById(`${booper.id}-autocard`);
+      if (!card) return;
+
+      const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
+      const unlocked = index === 0 ? true : prevOwned && index <= maxOwnedIndex + 1;
+      const affordable = unlocked && gameState.boops >= getAutoBooperCost(booper);
+      const costLabel = card.querySelectorAll('.auto-booper-cost');
+      const ownedLabel = costLabel[0];
+      const priceLabel = costLabel[1];
+      const button = card.querySelector('.auto-booper-buy');
+      const iconEl = card.querySelector('.auto-booper-icon');
+      const nameEl = card.querySelector('.auto-booper-name');
+
+      card.classList.remove('available', 'unavailable', 'locked', 'upgrade-just-unlocked');
+
+      if (ownedLabel) {
+        ownedLabel.textContent = `Owned: ${formatNumber(booper.owned || 0)}`;
+      }
+
+      if (!unlocked) {
+        if (iconEl) iconEl.textContent = '❔';
+        if (nameEl) nameEl.textContent = '???';
+        if (priceLabel) priceLabel.textContent = '';
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Locked';
+        }
+        card.classList.add('locked');
+        return;
+      }
+
+      if (iconEl) iconEl.textContent = booper.icon || '🏭';
+      if (nameEl) nameEl.textContent = booper.name;
+      if (priceLabel) priceLabel.textContent = `${formatNumber(getAutoBooperCost(booper))} boops`;
+
+      if (affordable) {
+        card.classList.add('available');
+        if (!booper.wasAffordable) {
+          card.classList.add('upgrade-just-unlocked');
+          booper.wasAffordable = true;
+          setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 800);
+        }
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Buy';
+        }
+      } else {
+        card.classList.add('unavailable');
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Buy';
+        }
+      }
+    });
+  }
 
 const modalControls = {
   backdrop: document.getElementById('modal-backdrop'),
@@ -1701,58 +1726,65 @@ function renderAutoBoopers() {
     }
   });
 
-  const maxVisibleIndex = Math.min(gameState.autoBoopers.length - 1, maxOwnedIndex + 2);
   const fragment = document.createDocumentFragment();
 
   gameState.autoBoopers.forEach((auto, index) => {
-    if (index > maxVisibleIndex) return;
     const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
-      const nextCost = getAutoBooperCost(auto);
+    const unlocked = index === 0 ? true : prevOwned && index <= maxOwnedIndex + 1;
+    const currentCost = getAutoBooperCost(auto);
+
+    let stateClass = 'locked';
+    let displayIcon = auto.icon || '🏭';
+    let displayName = auto.name;
+    let costText = `${formatNumber(currentCost)} boops`;
+
+    if (!unlocked) {
+      displayIcon = '❔';
+      displayName = '???';
+      costText = '';
+    } else if (gameState.boops >= currentCost) {
+      stateClass = 'available';
+    } else {
+      stateClass = 'unavailable';
+    }
+
     const card = document.createElement('div');
-    card.className = 'auto-booper-card upgrade-card';
+    card.className = `auto-booper-card ${stateClass}`;
     card.id = `${auto.id}-autocard`;
     card.dataset.id = auto.id;
     card.dataset.index = String(index);
 
-    if ((auto.owned || 0) > 0) {
-      card.classList.add('purchased');
-    } else if (prevOwned) {
-      card.classList.add('upgrade-available');
-    } else {
-      card.classList.add('locked');
-    }
-
     const icon = document.createElement('div');
-    icon.className = 'store-icon';
-    icon.textContent = auto.icon || '🏭';
+    icon.className = 'auto-booper-icon';
+    icon.textContent = displayIcon;
 
-    const main = document.createElement('div');
-    main.className = 'store-main';
     const nameEl = document.createElement('div');
-    nameEl.className = 'store-name';
-    nameEl.textContent = auto.name;
+    nameEl.className = 'auto-booper-name';
+    nameEl.textContent = displayName;
+
     const ownedEl = document.createElement('div');
-    ownedEl.className = 'store-sub';
+    ownedEl.className = 'auto-booper-cost';
     ownedEl.textContent = `Owned: ${formatNumber(auto.owned || 0)}`;
-    main.append(nameEl, ownedEl);
 
     const costEl = document.createElement('div');
-    costEl.className = 'store-cost';
-    costEl.textContent = `${formatNumber(nextCost)} boops`;
+    costEl.className = 'auto-booper-cost';
+    costEl.textContent = costText;
 
-    card.append(icon, main, costEl);
+    const buyBtn = document.createElement('button');
+    buyBtn.className = 'auto-booper-buy';
+    buyBtn.type = 'button';
+    buyBtn.textContent = unlocked ? 'Buy' : 'Locked';
+    buyBtn.disabled = stateClass !== 'available';
 
     const showAutoTooltip = (event) => {
       const tooltip = ui.autoBooperTooltip;
       if (!tooltip) return;
-      if (!prevOwned && (auto.owned || 0) === 0) {
-        tooltip.textContent = 'Unlock previous tier to view details';
+      if (!unlocked) {
+        tooltip.textContent = 'Unlock previous autoclicker to reveal details';
       } else {
         const unitBps = formatNumber(auto.baseBps);
         const totalBps = formatNumber(getAutoBooperBps(auto));
-        tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(
-          nextCost
-        )} boops<br>+${unitBps} BPS per unit (total ${totalBps})`;
+        tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(currentCost)} boops<br>+${unitBps} BPS per unit (total ${totalBps})`;
       }
       tooltip.classList.remove('hidden');
       tooltip.style.left = `${event.pageX + 12}px`;
@@ -1763,13 +1795,22 @@ function renderAutoBoopers() {
     card.addEventListener('mousemove', (event) => showAutoTooltip(event));
     card.addEventListener('mouseleave', hideUpgradeTooltips);
 
-    card.addEventListener('click', () => {
-      if (!prevOwned) return;
-      const currentCost = getAutoBooperCost(auto);
-      if (gameState.boops >= currentCost) {
-        buyAutoBooper(auto.id);
-      }
+    const attemptPurchase = () => {
+      if (stateClass !== 'available') return;
+      buyAutoBooper(auto.id);
+    };
+
+    card.addEventListener('click', attemptPurchase);
+    buyBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      attemptPurchase();
     });
+
+    card.append(icon, nameEl, ownedEl);
+    if (costText) {
+      card.append(costEl);
+    }
+    card.append(buyBtn);
 
     fragment.appendChild(card);
   });
