@@ -866,33 +866,26 @@ function updateUpgradeCardVisuals() {
       const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
       const unlocked = index === 0 ? true : prevOwned && index <= maxOwnedIndex + 1;
       const affordable = unlocked && gameState.boops >= getAutoBooperCost(booper);
-      const costLabel = card.querySelectorAll('.auto-booper-cost');
-      const ownedLabel = costLabel[0];
-      const priceLabel = costLabel[1];
-      const button = card.querySelector('.auto-booper-buy');
+      const priceLabel = card.querySelector('.auto-booper-cost');
       const iconEl = card.querySelector('.auto-booper-icon');
       const nameEl = card.querySelector('.auto-booper-name');
+      const metaEl = card.querySelector('.auto-booper-meta');
 
       card.classList.remove('available', 'unavailable', 'locked', 'upgrade-just-unlocked');
-
-      if (ownedLabel) {
-        ownedLabel.textContent = `Owned: ${formatNumber(booper.owned || 0)}`;
-      }
 
       if (!unlocked) {
         if (iconEl) iconEl.textContent = '❔';
         if (nameEl) nameEl.textContent = '???';
-        if (priceLabel) priceLabel.textContent = '';
-        if (button) {
-          button.disabled = true;
-          button.textContent = 'Locked';
-        }
+        if (metaEl) metaEl.textContent = '';
+        if (priceLabel) priceLabel.textContent = '???';
         card.classList.add('locked');
         return;
       }
 
       if (iconEl) iconEl.textContent = booper.icon || '🏭';
       if (nameEl) nameEl.textContent = booper.name;
+      if (metaEl)
+        metaEl.textContent = `Owned: ${formatNumber(booper.owned || 0)} • ${formatNumber(getAutoBooperBps(booper))} boops/s`;
       if (priceLabel) priceLabel.textContent = `${formatNumber(getAutoBooperCost(booper))} boops`;
 
       if (affordable) {
@@ -902,16 +895,8 @@ function updateUpgradeCardVisuals() {
           booper.wasAffordable = true;
           setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 800);
         }
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Buy';
-        }
       } else {
         card.classList.add('unavailable');
-        if (button) {
-          button.disabled = true;
-          button.textContent = 'Buy';
-        }
       }
     });
   }
@@ -1736,12 +1721,14 @@ function renderAutoBoopers() {
     let stateClass = 'locked';
     let displayIcon = auto.icon || '🏭';
     let displayName = auto.name;
+    let metaText = `Owned: ${formatNumber(auto.owned || 0)} • ${formatNumber(getAutoBooperBps(auto))} boops/s`;
     let costText = `${formatNumber(currentCost)} boops`;
 
     if (!unlocked) {
       displayIcon = '❔';
       displayName = '???';
-      costText = '';
+      costText = '???';
+      metaText = '';
     } else if (gameState.boops >= currentCost) {
       stateClass = 'available';
     } else {
@@ -1758,23 +1745,22 @@ function renderAutoBoopers() {
     icon.className = 'auto-booper-icon';
     icon.textContent = displayIcon;
 
+    const infoWrap = document.createElement('div');
+    infoWrap.className = 'auto-booper-info';
+
     const nameEl = document.createElement('div');
     nameEl.className = 'auto-booper-name';
     nameEl.textContent = displayName;
 
-    const ownedEl = document.createElement('div');
-    ownedEl.className = 'auto-booper-cost';
-    ownedEl.textContent = `Owned: ${formatNumber(auto.owned || 0)}`;
+    const metaEl = document.createElement('div');
+    metaEl.className = 'auto-booper-meta';
+    metaEl.textContent = metaText;
+
+    infoWrap.append(nameEl, metaEl);
 
     const costEl = document.createElement('div');
     costEl.className = 'auto-booper-cost';
     costEl.textContent = costText;
-
-    const buyBtn = document.createElement('button');
-    buyBtn.className = 'auto-booper-buy';
-    buyBtn.type = 'button';
-    buyBtn.textContent = unlocked ? 'Buy' : 'Locked';
-    buyBtn.disabled = stateClass !== 'available';
 
     const showAutoTooltip = (event) => {
       const tooltip = ui.autoBooperTooltip;
@@ -1791,26 +1777,18 @@ function renderAutoBoopers() {
       tooltip.style.top = `${event.pageY + 12}px`;
     };
 
-    card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
-    card.addEventListener('mousemove', (event) => showAutoTooltip(event));
-    card.addEventListener('mouseleave', hideUpgradeTooltips);
+    if (stateClass !== 'locked') {
+      card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
+      card.addEventListener('mousemove', (event) => showAutoTooltip(event));
+      card.addEventListener('mouseleave', hideUpgradeTooltips);
+    }
 
-    const attemptPurchase = () => {
+    card.addEventListener('click', () => {
       if (stateClass !== 'available') return;
       buyAutoBooper(auto.id);
-    };
-
-    card.addEventListener('click', attemptPurchase);
-    buyBtn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      attemptPurchase();
     });
 
-    card.append(icon, nameEl, ownedEl);
-    if (costText) {
-      card.append(costEl);
-    }
-    card.append(buyBtn);
+    card.append(icon, infoWrap, costEl);
 
     fragment.appendChild(card);
   });

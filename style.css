@@ -315,17 +315,18 @@ button {
 
 .auto-booper-card {
   border: 1px solid #333;
-  padding: 8px;
   border-radius: 6px;
   background-color: #202020;
+  padding: 4px 8px;
+  margin-bottom: 4px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
 }
 
 .auto-booper-card.available {
-  border: 2px solid #4caf50;
+  border: 1px solid #4caf50;
   opacity: 1;
 }
 
@@ -337,6 +338,7 @@ button {
 .auto-booper-card.locked {
   border: 1px solid #333;
   opacity: 0.3;
+  cursor: default;
 }
 
 .auto-booper-card.upgrade-just-unlocked {
@@ -344,23 +346,36 @@ button {
 }
 
 .auto-booper-icon {
-  font-size: 26px;
+  font-size: 22px;
+  flex: 0 0 28px;
   text-align: center;
 }
 
 .auto-booper-name {
   font-weight: bold;
-  text-align: center;
+  text-align: left;
+}
+
+.auto-booper-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+
+.auto-booper-meta {
+  opacity: 0.8;
 }
 
 .auto-booper-cost {
+  flex: 0 0 auto;
   font-size: 12px;
-  opacity: 0.8;
-  text-align: center;
+  opacity: 0.9;
+  text-align: right;
 }
 
-.auto-booper-card button {
-  margin-top: 4px;
+.auto-booper-card.available:hover {
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
 }
 
 .floating-text {
