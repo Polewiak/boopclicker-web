@@ -41,6 +41,7 @@ const bpcUpgradesConfig = [
     id: 'earFlicker',
     name: 'Energetic Ear Flicker',
     description: 'Your reflexes improve. Boops feel snappier.',
+    icon: '🐾',
     cost: 100,
     bpcMultiplierBonus: 0.2,
     purchased: false,
@@ -50,6 +51,7 @@ const bpcUpgradesConfig = [
     id: 'boyBopper',
     name: 'Boy Bopper',
     description: 'You learn the proper angle to boop cute boys.',
+    icon: '🦊',
     cost: 500,
     bpcMultiplierBonus: 0.3,
     purchased: false,
@@ -59,6 +61,7 @@ const bpcUpgradesConfig = [
     id: 'himboHooters',
     name: 'Himbo Hooters',
     description: 'Massive confidence boost, massive boops.',
+    icon: '🐻',
     cost: 2000,
     bpcMultiplierBonus: 0.4,
     purchased: false,
@@ -68,6 +71,7 @@ const bpcUpgradesConfig = [
     id: 'doubleTap',
     name: 'Double Tap Technique',
     description: 'You sometimes boop twice before they even react.',
+    icon: '🐱',
     cost: 5000,
     bpcMultiplierBonus: 0.5,
     purchased: false,
@@ -77,6 +81,7 @@ const bpcUpgradesConfig = [
     id: 'noseTargeting',
     name: 'Advanced Nose Targeting',
     description: 'Never miss the snoot again.',
+    icon: '🐶',
     cost: 10_000,
     bpcMultiplierBonus: 0.6,
     purchased: false,
@@ -86,6 +91,7 @@ const bpcUpgradesConfig = [
     id: 'softPawPads',
     name: 'Soft Paw Pads',
     description: 'Boops feel nicer; people ask for more.',
+    icon: '🐹',
     cost: 25_000,
     bpcMultiplierBonus: 0.7,
     purchased: false,
@@ -95,6 +101,7 @@ const bpcUpgradesConfig = [
     id: 'emotionalSupportBoops',
     name: 'Emotional Support Boops',
     description: 'Each boop now counts as therapy.',
+    icon: '🐰',
     cost: 50_000,
     bpcMultiplierBonus: 0.8,
     purchased: false,
@@ -104,6 +111,7 @@ const bpcUpgradesConfig = [
     id: 'boopWorkshops',
     name: 'Boop Workshops',
     description: 'You start teaching others how to boop properly.',
+    icon: '🦁',
     cost: 100_000,
     bpcMultiplierBonus: 1,
     purchased: false,
@@ -113,6 +121,7 @@ const bpcUpgradesConfig = [
     id: 'thumbEndurance',
     name: 'Thumb Endurance Training',
     description: 'Your paw can boop for hours without getting tired.',
+    icon: '🐯',
     cost: 250_000,
     bpcMultiplierBonus: 1.2,
     purchased: false,
@@ -122,6 +131,7 @@ const bpcUpgradesConfig = [
     id: 'boopDiploma',
     name: 'Boopology Diploma',
     description: 'You are now officially qualified to boop.',
+    icon: '🎓',
     cost: 500_000,
     bpcMultiplierBonus: 1.5,
     purchased: false,
@@ -131,6 +141,7 @@ const bpcUpgradesConfig = [
     id: 'fandomClout',
     name: 'Fandom Clout',
     description: 'Your boops are streamed, clipped and shared everywhere.',
+    icon: '📣',
     cost: 1_000_000,
     bpcMultiplierBonus: 1.8,
     purchased: false,
@@ -140,6 +151,7 @@ const bpcUpgradesConfig = [
     id: 'pawCareRoutine',
     name: 'Paw Care Routine',
     description: 'You invest in lotions and self-care. Better boops.',
+    icon: '🧴',
     cost: 2_000_000,
     bpcMultiplierBonus: 2,
     purchased: false,
@@ -149,6 +161,7 @@ const bpcUpgradesConfig = [
     id: 'boopMerch',
     name: 'Official Boop Merch',
     description: 'Every hoodie sold comes with a complimentary boop.',
+    icon: '🎁',
     cost: 5_000_000,
     bpcMultiplierBonus: 2.2,
     purchased: false,
@@ -158,6 +171,7 @@ const bpcUpgradesConfig = [
     id: 'limitedPrintBadges',
     name: 'Limited Print Badges',
     description: "People line up specifically to get the 'Booped by You' badge.",
+    icon: '🎟️',
     cost: 10_000_000,
     bpcMultiplierBonus: 2.5,
     purchased: false,
@@ -167,6 +181,7 @@ const bpcUpgradesConfig = [
     id: 'clickerMuscleMemory',
     name: 'Clicker Muscle Memory',
     description: 'Your hand moves before you think about it.',
+    icon: '🎮',
     cost: 25_000_000,
     bpcMultiplierBonus: 3,
     purchased: false,
@@ -176,6 +191,7 @@ const bpcUpgradesConfig = [
     id: 'snootRadar',
     name: 'Snoot Radar',
     description: 'You instinctively detect nearby snoots to boop.',
+    icon: '📡',
     cost: 50_000_000,
     bpcMultiplierBonus: 3.5,
     purchased: false,
@@ -185,6 +201,7 @@ const bpcUpgradesConfig = [
     id: 'collabStream',
     name: 'Collab Stream',
     description: 'Streaming with bigger creators multiplies your reach.',
+    icon: '📺',
     cost: 100_000_000,
     bpcMultiplierBonus: 4,
     purchased: false,
@@ -194,6 +211,7 @@ const bpcUpgradesConfig = [
     id: 'boopUniversity',
     name: 'Boop University Chair',
     description: 'You are now the professor of applied boopology.',
+    icon: '🏛️',
     cost: 250_000_000,
     bpcMultiplierBonus: 4.5,
     purchased: false,
@@ -203,6 +221,7 @@ const bpcUpgradesConfig = [
     id: 'brandDeals',
     name: 'Brand Deals',
     description: 'Every sponsorship includes boop integration.',
+    icon: '💼',
     cost: 500_000_000,
     bpcMultiplierBonus: 5,
     purchased: false,
@@ -212,6 +231,7 @@ const bpcUpgradesConfig = [
     id: 'conGoerLegend',
     name: 'Con-Goer Legend',
     description: "Everyone at conventions knows you as 'that boop person'.",
+    icon: '🏅',
     cost: 1_000_000_000,
     bpcMultiplierBonus: 6,
     purchased: false,
@@ -221,6 +241,7 @@ const bpcUpgradesConfig = [
     id: 'hyperFocus',
     name: 'Hyperfocus Mode',
     description: 'You get into the zone. Boops per click skyrocket.',
+    icon: '🎯',
     cost: 2_000_000_000,
     bpcMultiplierBonus: 7,
     purchased: false,
@@ -230,6 +251,7 @@ const bpcUpgradesConfig = [
     id: 'boopCult',
     name: 'Boop Cult',
     description: 'A dedicated following that lives for your boops.',
+    icon: '🕯️',
     cost: 5_000_000_000,
     bpcMultiplierBonus: 8,
     purchased: false,
@@ -239,6 +261,7 @@ const bpcUpgradesConfig = [
     id: 'crossUniverseFanbase',
     name: 'Cross-Universe Fanbase',
     description: 'Your boops trend in alternate timelines.',
+    icon: '🌌',
     cost: 10_000_000_000,
     bpcMultiplierBonus: 9,
     purchased: false,
@@ -248,6 +271,7 @@ const bpcUpgradesConfig = [
     id: 'mythicStatus',
     name: 'Mythic Booper Status',
     description: 'Stories of your boops are told around campfires.',
+    icon: '🐉',
     cost: 25_000_000_000,
     bpcMultiplierBonus: 10,
     purchased: false,
@@ -257,6 +281,7 @@ const bpcUpgradesConfig = [
     id: 'timeLoopPractice',
     name: 'Time Loop Practice',
     description: 'You have practiced this boop for centuries (kind of).',
+    icon: '⏳',
     cost: 50_000_000_000,
     bpcMultiplierBonus: 12,
     purchased: false,
@@ -266,6 +291,7 @@ const bpcUpgradesConfig = [
     id: 'quantumClicks',
     name: 'Quantum Clicks',
     description: 'Each click happens in multiple universes at once.',
+    icon: '⚛️',
     cost: 100_000_000_000,
     bpcMultiplierBonus: 14,
     purchased: false,
@@ -275,6 +301,7 @@ const bpcUpgradesConfig = [
     id: 'boopDeity',
     name: 'Ascended Boop Deity',
     description: 'Devotion to you is measured in boops per second.',
+    icon: '🙏',
     cost: 250_000_000_000,
     bpcMultiplierBonus: 16,
     purchased: false,
@@ -284,6 +311,7 @@ const bpcUpgradesConfig = [
     id: 'boopChurch',
     name: 'Church of the Holy Boop',
     description: 'Weekly boops are now part of liturgy.',
+    icon: '⛪',
     cost: 500_000_000_000,
     bpcMultiplierBonus: 18,
     purchased: false,
@@ -293,6 +321,7 @@ const bpcUpgradesConfig = [
     id: 'galacticAmbassador',
     name: 'Galactic Boop Ambassador',
     description: 'You negotiate peace treaties with a gentle nose boop.',
+    icon: '🚀',
     cost: 1_000_000_000_000,
     bpcMultiplierBonus: 20,
     purchased: false,
@@ -302,6 +331,7 @@ const bpcUpgradesConfig = [
     id: 'endOfAllSnoots',
     name: 'End of All Snoots',
     description: 'Every snoot that ever existed eventually gets booped by you.',
+    icon: '🌀',
     cost: 5_000_000_000_000,
     bpcMultiplierBonus: 25,
     purchased: false,
@@ -769,7 +799,7 @@ function updateStoreUI() {
 
 function updateUpgradeCardVisuals() {
   const boops = gameState.boops;
-  const visibleClicks = gameState.bpcUpgrades.slice(0, 10);
+  const visibleClicks = gameState.bpcUpgrades.filter((upgrade) => !upgrade.purchased).slice(0, 10);
 
   visibleClicks.forEach((upgrade) => {
     if (typeof upgrade.wasAffordable !== 'boolean') {
@@ -1504,6 +1534,7 @@ function updateUI() {
   updateShareText();
 
   updateStoreUI();
+  renderInventory();
   updatePrestigeUI();
   renderMetaPerks();
   renderFactions();
@@ -1586,7 +1617,7 @@ function renderClickUpgradesGrid() {
   if (!container) return;
   container.innerHTML = '';
 
-  const visibleUpgrades = gameState.bpcUpgrades.slice(0, 10);
+  const visibleUpgrades = gameState.bpcUpgrades.filter((upgrade) => !upgrade.purchased).slice(0, 10);
   lastUnlockedClickCount = getUnlockedClickUpgradeCount();
 
   visibleUpgrades.forEach((upgrade, index) => {
@@ -1602,9 +1633,7 @@ function renderClickUpgradesGrid() {
     const iconSymbol = upgrade.icon || '★';
     icon.textContent = unlocked ? iconSymbol : '？';
 
-    if (upgrade.purchased) {
-      icon.classList.add('purchased');
-    } else if (unlocked) {
+    if (unlocked) {
       icon.classList.add('available');
     } else {
       icon.classList.add('locked');
@@ -1640,6 +1669,20 @@ function renderClickUpgradesGrid() {
       });
     }
     container.appendChild(icon);
+  });
+}
+
+function renderInventory() {
+  const container = document.getElementById('inventory-items');
+  if (!container) return;
+  container.innerHTML = '';
+
+  gameState.bpcUpgrades.forEach((upgrade) => {
+    if (!upgrade.purchased) return;
+    const item = document.createElement('div');
+    item.className = 'inventory-item';
+    item.textContent = upgrade.icon || '★';
+    container.appendChild(item);
   });
 }
 

@@ -146,6 +146,38 @@ button {
   gap: 16px;
 }
 
+#player-inventory {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+  width: 100%;
+}
+
+#player-inventory h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  text-align: center;
+}
+
+#inventory-items {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.inventory-item {
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #202020;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
 #boop-count-wrapper {
   text-align: center;
 }
