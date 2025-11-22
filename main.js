@@ -7,6 +7,8 @@ const BASE_CRIT_CHANCE = 0.03;
 const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
+const BOOP_IMAGE_DEFAULT_SRC = 'assets/boop-face-open.svg';
+const BOOP_IMAGE_PRESSED_SRC = 'assets/boop-face-closed.svg';
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 // Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
@@ -702,12 +704,14 @@ let passiveGainRemainder = 0;
 let storeNeedsRender = true;
 let lastUnlockedClickCount = 0;
 let factionOverlayRendered = false;
+let boopFaceResetTimeout = null;
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
   boopCountValue: document.getElementById('boop-count-value'),
   boopBpsValue: document.getElementById('boop-bps-value'),
   boopButton: document.getElementById('boop-button'),
+  boopButtonImage: document.getElementById('boop-button-image'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
@@ -968,6 +972,9 @@ function closeModal() {
 function initGame() {
   setupModals();
   loadGame();
+  if (ui.boopButtonImage) {
+    ui.boopButtonImage.src = BOOP_IMAGE_DEFAULT_SRC;
+  }
   initSfx();
   initProfileUI();
   initTitleUI();
@@ -2443,11 +2450,29 @@ function showCritPopup(value) {
   spawnFloatingText(`CRITICAL BOOP! +${formatNumber(Math.floor(value))}`, 'crit-floating');
 }
 
+function setBoopFace(src) {
+  if (ui.boopButtonImage) {
+    ui.boopButtonImage.src = src;
+  }
+}
+
+function showPressedBoopFace() {
+  if (!ui.boopButtonImage) return;
+  if (boopFaceResetTimeout) {
+    clearTimeout(boopFaceResetTimeout);
+  }
+  setBoopFace(BOOP_IMAGE_PRESSED_SRC);
+  boopFaceResetTimeout = setTimeout(() => {
+    setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
+  }, 120);
+}
+
 function animateBoopButton() {
   if (!ui.boopButton) return;
   ui.boopButton.classList.remove('boop-anim');
   void ui.boopButton.offsetWidth;
   ui.boopButton.classList.add('boop-anim');
+  showPressedBoopFace();
 }
 
 function spawnBoopFloat(amount) {
