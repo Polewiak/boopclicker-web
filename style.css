@@ -97,14 +97,27 @@ button {
   flex-direction: column;
   justify-content: center;
   padding: 16px;
-  background: #181818;
+  background-image: url('/assets/CozyPastelRoom_Background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 10px;
   border: 1px solid #333;
   overflow: hidden;
 }
 
+#boop-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  z-index: 0;
+}
+
 #boop-panel > * {
   position: relative;
+  z-index: 1;
 }
 
 #daily-box-float {
@@ -154,6 +167,18 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+#boop-image-wrapper {
+  width: 100%;
+  max-width: 320px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background-color: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
 }
 
 #player-inventory {
@@ -216,14 +241,13 @@ button {
   border: none;
   background: transparent;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(255, 105, 180, 0.35);
-  transition: transform 0.05s ease-out, box-shadow 0.15s ease-out;
+  transition: transform 0.05s ease-out;
   display: block;
+  border-radius: 10px;
 }
 
 #boop-button.boop-squish {
   transform: scale(0.95);
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.3);
 }
 
 #crit-popup {

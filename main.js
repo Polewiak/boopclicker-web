@@ -1717,29 +1717,25 @@ function renderAutoBoopers() {
     }
   });
 
-  const fragment = document.createDocumentFragment();
+  const visibleUnlocked = [];
+  const locked = [];
 
   gameState.autoBoopers.forEach((auto, index) => {
     const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
     const unlocked = index === 0 ? true : prevOwned && index <= maxOwnedIndex + 1;
-    const currentCost = getAutoBooperCost(auto);
-
-    let stateClass = 'locked';
-    let displayIcon = auto.icon || '🏭';
-    let displayName = auto.name;
-    let metaText = `Owned: ${formatNumber(auto.owned || 0)} • ${formatNumber(getAutoBooperBps(auto))} boops/s`;
-    let costText = `${formatNumber(currentCost)} boops`;
-
-    if (!unlocked) {
-      displayIcon = '❔';
-      displayName = '???';
-      costText = '???';
-      metaText = '';
-    } else if (gameState.boops >= currentCost) {
-      stateClass = 'available';
+    if (unlocked) {
+      visibleUnlocked.push({ auto, index });
     } else {
-      stateClass = 'unavailable';
+      locked.push({ auto, index });
     }
+  });
+
+  const fragment = document.createDocumentFragment();
+
+  visibleUnlocked.forEach(({ auto, index }) => {
+    const currentCost = getAutoBooperCost(auto);
+    const affordable = gameState.boops >= currentCost;
+    const stateClass = affordable ? 'available' : 'unavailable';
 
     const card = document.createElement('div');
     card.className = `auto-booper-card ${stateClass}`;
@@ -1749,58 +1745,87 @@ function renderAutoBoopers() {
 
     const icon = document.createElement('div');
     icon.className = 'auto-booper-icon';
-    icon.textContent = displayIcon;
+    icon.textContent = auto.icon || '🏭';
 
     const infoWrap = document.createElement('div');
     infoWrap.className = 'auto-booper-info';
 
     const nameEl = document.createElement('div');
     nameEl.className = 'auto-booper-name';
-    nameEl.textContent = displayName;
+    nameEl.textContent = auto.name;
 
     const metaEl = document.createElement('div');
     metaEl.className = 'auto-booper-meta';
-    metaEl.textContent = metaText;
+    metaEl.textContent = `Owned: ${formatNumber(auto.owned || 0)} • ${formatNumber(getAutoBooperBps(auto))} boops/s`;
 
     infoWrap.append(nameEl, metaEl);
 
     const costEl = document.createElement('div');
     costEl.className = 'auto-booper-cost';
-    costEl.textContent = costText;
+    costEl.textContent = `${formatNumber(currentCost)} boops`;
 
     const showAutoTooltip = (event) => {
       const tooltip = ui.autoBooperTooltip;
       if (!tooltip) return;
-      if (!unlocked) {
-        tooltip.textContent = 'Unlock previous autoclicker to reveal details';
-      } else {
-        const unitBps = formatNumber(auto.baseBps);
-        const totalBps = formatNumber(getAutoBooperBps(auto));
-        tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(currentCost)} boops<br>+${unitBps} BPS per unit (total ${totalBps})`;
-      }
+      const unitBps = formatNumber(auto.baseBps);
+      const totalBps = formatNumber(getAutoBooperBps(auto));
+      tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(currentCost)} boops<br>+${unitBps} BPS per unit (total ${totalBps})`;
       tooltip.classList.remove('hidden');
       tooltip.style.left = `${event.pageX + 12}px`;
       tooltip.style.top = `${event.pageY + 12}px`;
     };
 
-    if (stateClass !== 'locked') {
-      card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
-      card.addEventListener('mousemove', (event) => showAutoTooltip(event));
-      card.addEventListener('mouseleave', hideUpgradeTooltips);
-    }
+    card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
+    card.addEventListener('mousemove', (event) => showAutoTooltip(event));
+    card.addEventListener('mouseleave', hideUpgradeTooltips);
 
     card.addEventListener('click', () => {
-      if (stateClass !== 'available') return;
+      if (!affordable) return;
       buyAutoBooper(auto.id);
     });
 
     card.append(icon, infoWrap, costEl);
+    fragment.appendChild(card);
+  });
 
+  const maxLockedToShow = 3;
+  const lockedToRender = locked.slice(0, maxLockedToShow);
+
+  lockedToRender.forEach(({ auto, index }) => {
+    const card = document.createElement('div');
+    card.className = 'auto-booper-card locked';
+    card.id = `${auto.id}-autocard`;
+    card.dataset.id = auto.id;
+    card.dataset.index = String(index);
+
+    const icon = document.createElement('div');
+    icon.className = 'auto-booper-icon';
+    icon.textContent = '❔';
+
+    const infoWrap = document.createElement('div');
+    infoWrap.className = 'auto-booper-info';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'auto-booper-name';
+    nameEl.textContent = '???';
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'auto-booper-meta';
+    metaEl.textContent = '';
+
+    infoWrap.append(nameEl, metaEl);
+
+    const costEl = document.createElement('div');
+    costEl.className = 'auto-booper-cost';
+    costEl.textContent = '???';
+
+    card.append(icon, infoWrap, costEl);
     fragment.appendChild(card);
   });
 
   container.appendChild(fragment);
 }
+
 
 function renderSkinsShop() {
   const grid = ui.skinsGrid;
