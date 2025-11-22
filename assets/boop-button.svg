@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-labelledby="title desc" role="img">
+  <title id="title">Boop button face</title>
+  <desc id="desc">A friendly tan critter face with a pink nose used as the boop button.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M40 90 Q24 60 40 40 Q60 18 80 42" fill="#d19c64" stroke="#b07d4b" stroke-width="6" stroke-linecap="round" />
+    <path d="M160 90 Q176 60 160 40 Q140 18 120 42" fill="#d19c64" stroke="#b07d4b" stroke-width="6" stroke-linecap="round" />
+    <circle cx="100" cy="110" r="70" fill="#d8a56b" stroke="#b07d4b" stroke-width="8" />
+    <ellipse cx="70" cy="100" rx="10" ry="16" fill="#3b2a1f" />
+    <ellipse cx="130" cy="100" rx="10" ry="16" fill="#3b2a1f" />
+    <path d="M100 120 q30 12 0 24 q-30 -12 0 -24" fill="#e3879f" stroke="#b65f7b" stroke-width="4" />
+    <path d="M78 144 q22 18 44 0" fill="none" stroke="#3b2a1f" stroke-width="6" stroke-linecap="round" />
+  </g>
+</svg>
