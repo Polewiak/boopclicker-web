@@ -7,8 +7,8 @@ const BASE_CRIT_CHANCE = 0.03;
 const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
-const BOOP_IMAGE_DEFAULT_SRC = 'assets/boop-face-open.svg';
-const BOOP_IMAGE_PRESSED_SRC = 'assets/boop-face-closed.svg';
+const BOOP_IMAGE_DEFAULT_SRC = './assets/Boop_Default_Skin_Unbooped.png';
+const BOOP_IMAGE_PRESSED_SRC = './assets/Boop_Default_Skin_Booped.png';
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 // Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
@@ -711,7 +711,6 @@ const ui = {
   boopCountValue: document.getElementById('boop-count-value'),
   boopBpsValue: document.getElementById('boop-bps-value'),
   boopButton: document.getElementById('boop-button'),
-  boopButtonImage: document.getElementById('boop-button-image'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
@@ -972,8 +971,8 @@ function closeModal() {
 function initGame() {
   setupModals();
   loadGame();
-  if (ui.boopButtonImage) {
-    ui.boopButtonImage.src = BOOP_IMAGE_DEFAULT_SRC;
+  if (ui.boopButton) {
+    ui.boopButton.src = BOOP_IMAGE_DEFAULT_SRC;
   }
   initSfx();
   initProfileUI();
@@ -2268,10 +2267,6 @@ function doBoop() {
   }
   spawnBoopFloat(appliedGain);
   animateBoopButton();
-  if (ui.boopButton) {
-    ui.boopButton.classList.add('boop-pressed', 'pressed');
-    setTimeout(() => ui.boopButton.classList.remove('boop-pressed', 'pressed'), 80);
-  }
   playSfx(isCrit ? 'crit' : 'boop');
 
   if (isCrit) {
@@ -2451,13 +2446,13 @@ function showCritPopup(value) {
 }
 
 function setBoopFace(src) {
-  if (ui.boopButtonImage) {
-    ui.boopButtonImage.src = src;
+  if (ui.boopButton) {
+    ui.boopButton.src = src;
   }
 }
 
 function showPressedBoopFace() {
-  if (!ui.boopButtonImage) return;
+  if (!ui.boopButton) return;
   if (boopFaceResetTimeout) {
     clearTimeout(boopFaceResetTimeout);
   }
@@ -2469,10 +2464,13 @@ function showPressedBoopFace() {
 
 function animateBoopButton() {
   if (!ui.boopButton) return;
-  ui.boopButton.classList.remove('boop-anim');
+  ui.boopButton.classList.remove('boop-squish');
   void ui.boopButton.offsetWidth;
-  ui.boopButton.classList.add('boop-anim');
+  ui.boopButton.classList.add('boop-squish');
   showPressedBoopFace();
+  setTimeout(() => {
+    ui.boopButton?.classList.remove('boop-squish');
+  }, 140);
 }
 
 function spawnBoopFloat(amount) {
