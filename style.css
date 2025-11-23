@@ -34,6 +34,23 @@ button {
   user-select: none;
 }
 
+#boop-button,
+.click-upgrade-icon,
+.auto-booper-card,
+.skin-tile,
+.top-bar-icon,
+.upgrade-card,
+#top-bar-icons button {
+  cursor: pointer;
+  user-select: none;
+}
+
+.click-upgrade-icon *,
+.auto-booper-card *,
+.skin-tile * {
+  user-select: none;
+}
+
 input[type='text'],
 textarea {
   cursor: text;

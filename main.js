@@ -42,190 +42,190 @@ const bpcUpgradesConfig = [
   {
     id: 'earFlicker',
     name: 'Energetic Ear Flicker',
-    description: 'Your reflexes improve. Boops feel snappier.',
+    description: '+1 boop per click.',
     icon: '🐾',
     cost: 100,
-    bpcMultiplierBonus: 0.2,
+    bpcFlatBonus: 1,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boyBopper',
     name: 'Boy Bopper',
-    description: 'You learn the proper angle to boop cute boys.',
+    description: '+1 boop per click.',
     icon: '🦊',
     cost: 500,
-    bpcMultiplierBonus: 0.3,
+    bpcFlatBonus: 1,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'himboHooters',
     name: 'Himbo Hooters',
-    description: 'Massive confidence boost, massive boops.',
+    description: '+2 boops per click.',
     icon: '🐻',
     cost: 2000,
-    bpcMultiplierBonus: 0.4,
+    bpcFlatBonus: 2,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'doubleTap',
     name: 'Double Tap Technique',
-    description: 'You sometimes boop twice before they even react.',
+    description: '+2 boops per click.',
     icon: '🐱',
     cost: 5000,
-    bpcMultiplierBonus: 0.5,
+    bpcFlatBonus: 2,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'noseTargeting',
     name: 'Advanced Nose Targeting',
-    description: 'Never miss the snoot again.',
+    description: '+3 boops per click.',
     icon: '🐶',
     cost: 10_000,
-    bpcMultiplierBonus: 0.6,
+    bpcFlatBonus: 3,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'softPawPads',
     name: 'Soft Paw Pads',
-    description: 'Boops feel nicer; people ask for more.',
+    description: '+3 boops per click.',
     icon: '🐹',
     cost: 25_000,
-    bpcMultiplierBonus: 0.7,
+    bpcFlatBonus: 3,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'emotionalSupportBoops',
     name: 'Emotional Support Boops',
-    description: 'Each boop now counts as therapy.',
+    description: '+4 boops per click.',
     icon: '🐰',
     cost: 50_000,
-    bpcMultiplierBonus: 0.8,
+    bpcFlatBonus: 4,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopWorkshops',
     name: 'Boop Workshops',
-    description: 'You start teaching others how to boop properly.',
+    description: '+5 boops per click.',
     icon: '🦁',
     cost: 100_000,
-    bpcMultiplierBonus: 1,
+    bpcFlatBonus: 5,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'thumbEndurance',
     name: 'Thumb Endurance Training',
-    description: 'Your paw can boop for hours without getting tired.',
+    description: '+6 boops per click.',
     icon: '🐯',
     cost: 250_000,
-    bpcMultiplierBonus: 1.2,
+    bpcFlatBonus: 6,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopDiploma',
     name: 'Boopology Diploma',
-    description: 'You are now officially qualified to boop.',
+    description: '+7 boops per click.',
     icon: '🎓',
     cost: 500_000,
-    bpcMultiplierBonus: 1.5,
+    bpcFlatBonus: 7,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'fandomClout',
     name: 'Fandom Clout',
-    description: 'Your boops are streamed, clipped and shared everywhere.',
+    description: '+8 boops per click.',
     icon: '📣',
     cost: 1_000_000,
-    bpcMultiplierBonus: 1.8,
+    bpcFlatBonus: 8,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'pawCareRoutine',
     name: 'Paw Care Routine',
-    description: 'You invest in lotions and self-care. Better boops.',
+    description: '+9 boops per click.',
     icon: '🧴',
     cost: 2_000_000,
-    bpcMultiplierBonus: 2,
+    bpcFlatBonus: 9,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopMerch',
     name: 'Official Boop Merch',
-    description: 'Every hoodie sold comes with a complimentary boop.',
-    icon: '🎁',
+    description: '+10 boops per click.',
+    icon: '👕',
     cost: 5_000_000,
-    bpcMultiplierBonus: 2.2,
+    bpcFlatBonus: 10,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'limitedPrintBadges',
     name: 'Limited Print Badges',
-    description: "People line up specifically to get the 'Booped by You' badge.",
+    description: '+12 boops per click.',
     icon: '🎟️',
     cost: 10_000_000,
-    bpcMultiplierBonus: 2.5,
+    bpcFlatBonus: 12,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'clickerMuscleMemory',
     name: 'Clicker Muscle Memory',
-    description: 'Your hand moves before you think about it.',
-    icon: '🎮',
+    description: '+14 boops per click.',
+    icon: '💪',
     cost: 25_000_000,
-    bpcMultiplierBonus: 3,
+    bpcFlatBonus: 14,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'snootRadar',
     name: 'Snoot Radar',
-    description: 'You instinctively detect nearby snoots to boop.',
+    description: '+16 boops per click.',
     icon: '📡',
     cost: 50_000_000,
-    bpcMultiplierBonus: 3.5,
+    bpcFlatBonus: 16,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'collabStream',
     name: 'Collab Stream',
-    description: 'Streaming with bigger creators multiplies your reach.',
-    icon: '📺',
+    description: '+18 boops per click.',
+    icon: '📹',
     cost: 100_000_000,
-    bpcMultiplierBonus: 4,
+    bpcFlatBonus: 18,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopUniversity',
     name: 'Boop University Chair',
-    description: 'You are now the professor of applied boopology.',
+    description: '+20 boops per click.',
     icon: '🏛️',
     cost: 250_000_000,
-    bpcMultiplierBonus: 4.5,
+    bpcFlatBonus: 20,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'brandDeals',
     name: 'Brand Deals',
-    description: 'Every sponsorship includes boop integration.',
-    icon: '💼',
+    description: '+22 boops per click.',
+    icon: '📦',
     cost: 500_000_000,
-    bpcMultiplierBonus: 5,
+    bpcFlatBonus: 22,
     purchased: false,
     wasAffordable: false,
   },
@@ -233,109 +233,109 @@ const bpcUpgradesConfig = [
     id: 'conGoerLegend',
     name: 'Con-Goer Legend',
     description: "Everyone at conventions knows you as 'that boop person'.",
-    icon: '🏅',
+    icon: '🎭',
     cost: 1_000_000_000,
-    bpcMultiplierBonus: 6,
+    bpcFlatBonus: 24,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'hyperFocus',
     name: 'Hyperfocus Mode',
-    description: 'You get into the zone. Boops per click skyrocket.',
-    icon: '🎯',
+    description: '+26 boops per click.',
+    icon: '🧠',
     cost: 2_000_000_000,
-    bpcMultiplierBonus: 7,
+    bpcFlatBonus: 26,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopCult',
     name: 'Boop Cult',
-    description: 'A dedicated following that lives for your boops.',
-    icon: '🕯️',
+    description: '+28 boops per click.',
+    icon: '🔥',
     cost: 5_000_000_000,
-    bpcMultiplierBonus: 8,
+    bpcFlatBonus: 28,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'crossUniverseFanbase',
     name: 'Cross-Universe Fanbase',
-    description: 'Your boops trend in alternate timelines.',
+    description: 'Your boops trend in alternate timelines (+30 boops).',
     icon: '🌌',
     cost: 10_000_000_000,
-    bpcMultiplierBonus: 9,
+    bpcFlatBonus: 30,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'mythicStatus',
     name: 'Mythic Booper Status',
-    description: 'Stories of your boops are told around campfires.',
+    description: '+32 boops per click.',
     icon: '🐉',
     cost: 25_000_000_000,
-    bpcMultiplierBonus: 10,
+    bpcFlatBonus: 32,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'timeLoopPractice',
     name: 'Time Loop Practice',
-    description: 'You have practiced this boop for centuries (kind of).',
+    description: '+34 boops per click.',
     icon: '⏳',
     cost: 50_000_000_000,
-    bpcMultiplierBonus: 12,
+    bpcFlatBonus: 34,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'quantumClicks',
     name: 'Quantum Clicks',
-    description: 'Each click happens in multiple universes at once.',
+    description: '+36 boops per click.',
     icon: '⚛️',
     cost: 100_000_000_000,
-    bpcMultiplierBonus: 14,
+    bpcFlatBonus: 36,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopDeity',
     name: 'Ascended Boop Deity',
-    description: 'Devotion to you is measured in boops per second.',
+    description: '+38 boops per click.',
     icon: '🙏',
     cost: 250_000_000_000,
-    bpcMultiplierBonus: 16,
+    bpcFlatBonus: 38,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'boopChurch',
     name: 'Church of the Holy Boop',
-    description: 'Weekly boops are now part of liturgy.',
+    description: '+40 boops per click.',
     icon: '⛪',
     cost: 500_000_000_000,
-    bpcMultiplierBonus: 18,
+    bpcFlatBonus: 40,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'galacticAmbassador',
     name: 'Galactic Boop Ambassador',
-    description: 'You negotiate peace treaties with a gentle nose boop.',
+    description: '+45 boops per click.',
     icon: '🚀',
     cost: 1_000_000_000_000,
-    bpcMultiplierBonus: 20,
+    bpcFlatBonus: 45,
     purchased: false,
     wasAffordable: false,
   },
   {
     id: 'endOfAllSnoots',
     name: 'End of All Snoots',
-    description: 'Every snoot that ever existed eventually gets booped by you.',
+    description: '+50 boops per click.',
     icon: '🌀',
     cost: 5_000_000_000_000,
-    bpcMultiplierBonus: 25,
+    bpcFlatBonus: 50,
     purchased: false,
     wasAffordable: false,
   },
@@ -1258,8 +1258,15 @@ function saveGame() {
 function restoreBpcUpgrades(savedList) {
   return bpcUpgradesConfig.map((upgrade) => {
     const saved = Array.isArray(savedList) ? savedList.find((item) => item.id === upgrade.id) : null;
+    const savedFlatBonus =
+      typeof saved?.bpcFlatBonus === 'number'
+        ? saved.bpcFlatBonus
+        : typeof saved?.bpcMultiplierBonus === 'number'
+          ? Math.max(1, Math.round(saved.bpcMultiplierBonus * BASE_BPC))
+          : upgrade.bpcFlatBonus || 0;
     return {
       ...upgrade,
+      bpcFlatBonus: savedFlatBonus,
       purchased: saved?.purchased ?? false,
       wasAffordable: saved?.wasAffordable ?? false,
     };
@@ -1368,17 +1375,18 @@ function getMostBoopedSkin() {
 
 function recalculateProductionStats() {
   rebuildPermanentBonuses();
+  gameState.boops = Math.floor(Number(gameState.boops) || 0);
+  gameState.totalBoops = Math.floor(Number(gameState.totalBoops) || 0);
 
-  const clickMultiplier = gameState.bpcUpgrades.reduce((acc, upgrade) => {
+  const flatClickBonus = gameState.bpcUpgrades.reduce((acc, upgrade) => {
     if (upgrade.purchased) {
-      return acc + (upgrade.bpcMultiplierBonus || 0);
+      return acc + (upgrade.bpcFlatBonus || 0);
     }
     return acc;
-  }, 1);
+  }, 0);
 
-  gameState.bpcBase = BASE_BPC;
+  gameState.bpcBase = BASE_BPC + flatClickBonus;
   gameState.bpc = gameState.bpcBase;
-  gameState.bpcMultiplier *= clickMultiplier;
 
   let baseBps = 0;
   gameState.autoBoopers.forEach((booper) => {
@@ -1484,9 +1492,10 @@ function chooseFaction(id) {
 }
 
 function getFinalBpc() {
-  const base = (gameState.bpcBase ?? BASE_BPC) + (gameState.bpcFlatBonus || 0);
+  const base = Math.max(0, (gameState.bpcBase ?? BASE_BPC) + (gameState.bpcFlatBonus || 0));
   const factionBonus = 1 + (gameState.factionBonus?.bpc || 0);
-  return base * gameState.bpcMultiplier * gameState.globalMultiplier * factionBonus;
+  const raw = base * gameState.bpcMultiplier * gameState.globalMultiplier * factionBonus;
+  return Math.max(1, Math.floor(raw));
 }
 
 function getFinalBps() {
@@ -1517,8 +1526,8 @@ function applyOfflineProgress() {
 
 function updateUI() {
   const finalBps = getFinalBps();
-  const formattedBoops = formatNumber(Math.round(gameState.boops * 100) / 100);
-  const formattedTotal = formatNumber(Math.round(gameState.totalBoops * 100) / 100);
+  const formattedBoops = formatNumber(Math.floor(Number(gameState.boops) || 0));
+  const formattedTotal = formatNumber(Math.floor(Number(gameState.totalBoops) || 0));
   const formattedBps = formatNumber(Math.round(finalBps * 100) / 100);
 
   if (!gameState.currentFaction) {
@@ -1659,9 +1668,10 @@ function renderClickUpgradesGrid() {
       if (!unlocked) {
         tooltip.textContent = 'Future upgrade';
       } else {
+        const bonusText = upgrade.bpcFlatBonus != null ? `+${upgrade.bpcFlatBonus} BPC` : '';
         tooltip.innerHTML = `<strong>${upgrade.name}</strong><br>${upgrade.description}<br>Cost: ${formatNumber(
           upgrade.cost
-        )} boops<br>+${Math.round((upgrade.bpcMultiplierBonus || 0) * 100)}% BPC (multiplicative)`;
+        )} boops${bonusText ? `<br>${bonusText}` : ''}`;
       }
       tooltip.classList.remove('hidden');
       tooltip.style.left = `${event.pageX + 12}px`;
@@ -2276,15 +2286,12 @@ function showAchievementPopup(achievement) {
 
 function formatBoopGain(amount) {
   if (!Number.isFinite(amount)) return '0';
-  const rounded = amount < 10 ? Math.round(amount * 100) / 100 : Math.round(amount);
-  if (rounded < 10) {
-    return rounded.toFixed(2);
-  }
+  const rounded = Math.max(0, Math.floor(amount));
   return formatNumber(rounded);
 }
 
 function doBoop() {
-  const baseGain = getFinalBpc();
+  const baseGain = Math.max(1, Math.floor(getFinalBpc()));
   const isCrit = Math.random() < getEffectiveCritChance();
   let gain = baseGain;
 
@@ -2314,11 +2321,13 @@ function doBoop() {
 
 function buyBpcUpgrade(id) {
   const upgrade = gameState.bpcUpgrades.find((item) => item.id === id);
-  if (!upgrade || upgrade.purchased || gameState.boops < upgrade.cost) {
+  gameState.boops = Math.floor(Number(gameState.boops) || 0);
+  const cost = Number(upgrade?.cost ?? 0);
+  if (!upgrade || upgrade.purchased || gameState.boops < cost) {
     return;
   }
 
-  gameState.boops -= upgrade.cost;
+  gameState.boops = Math.max(0, gameState.boops - cost);
   upgrade.purchased = true;
   recalculateProductionStats();
   markStoreDirty();
@@ -2335,11 +2344,12 @@ function buyAutoBooper(id) {
   const cost = booper ? getAutoBooperCost(booper) : 0;
   const index = booper ? gameState.autoBoopers.indexOf(booper) : -1;
   const prevOwned = index <= 0 || (gameState.autoBoopers[index - 1]?.owned || 0) > 0;
+  gameState.boops = Math.floor(Number(gameState.boops) || 0);
   if (!booper || gameState.boops < cost || !prevOwned) {
     return;
   }
 
-  gameState.boops -= cost;
+  gameState.boops = Math.max(0, gameState.boops - cost);
   booper.owned = (booper.owned || 0) + 1;
   gameState.totalAutoBoopers += 1;
   recalculateProductionStats();
@@ -2440,13 +2450,14 @@ function gameLoop() {
 }
 
 function addBoops(amount) {
-  if (!Number.isFinite(amount) || amount <= 0) {
+  const gain = Math.floor(Number(amount) || 0);
+  if (!Number.isFinite(gain) || gain <= 0) {
     return 0;
   }
-  gameState.boops += amount;
-  gameState.totalBoops += amount;
+  gameState.boops = Math.max(0, Math.floor(Number(gameState.boops) || 0) + gain);
+  gameState.totalBoops = Math.max(0, Math.floor(Number(gameState.totalBoops) || 0) + gain);
   checkAchievements();
-  return amount;
+  return gain;
 }
 
 function announceOfflineGain(gain, seconds) {
