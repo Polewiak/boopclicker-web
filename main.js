@@ -704,7 +704,7 @@ let passiveGainRemainder = 0;
 let storeNeedsRender = true;
 let lastUnlockedClickCount = 0;
 let factionOverlayRendered = false;
-let boopFaceResetTimeout = null;
+let boopHoldActive = false;
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
@@ -1002,7 +1002,7 @@ function initSfx() {
 }
 
 function attachHandlers() {
-  ui.boopButton?.addEventListener('click', doBoop);
+  setupBoopButtonControls();
   ui.prestigeButton?.addEventListener('click', () => {
     doPrestige();
   });
@@ -2291,7 +2291,6 @@ function doBoop() {
     currentSkin.boops = (currentSkin.boops || 0) + 1;
   }
   spawnBoopFloat(appliedGain);
-  animateBoopButton();
   playSfx(isCrit ? 'crit' : 'boop');
 
   if (isCrit) {
@@ -2476,26 +2475,47 @@ function setBoopFace(src) {
   }
 }
 
-function showPressedBoopFace() {
-  if (!ui.boopButton) return;
-  if (boopFaceResetTimeout) {
-    clearTimeout(boopFaceResetTimeout);
+function handleBoopPress(event) {
+  if (event) {
+    event.preventDefault();
   }
+  if (!ui.boopButton) return;
+
+  boopHoldActive = true;
   setBoopFace(BOOP_IMAGE_PRESSED_SRC);
-  boopFaceResetTimeout = setTimeout(() => {
-    setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
-  }, 120);
+  ui.boopButton.classList.add('boop-squish');
+  doBoop();
 }
 
-function animateBoopButton() {
+function handleBoopRelease() {
   if (!ui.boopButton) return;
+
+  boopHoldActive = false;
+  setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
   ui.boopButton.classList.remove('boop-squish');
-  void ui.boopButton.offsetWidth;
-  ui.boopButton.classList.add('boop-squish');
-  showPressedBoopFace();
-  setTimeout(() => {
-    ui.boopButton?.classList.remove('boop-squish');
-  }, 140);
+}
+
+function setupBoopButtonControls() {
+  const button = ui.boopButton;
+  if (!button) return;
+
+  const releaseHandler = () => handleBoopRelease();
+
+  button.addEventListener('mousedown', (event) => {
+    handleBoopPress(event);
+  });
+  button.addEventListener('mouseup', releaseHandler);
+  button.addEventListener('mouseleave', releaseHandler);
+  button.addEventListener(
+    'touchstart',
+    (event) => {
+      event.preventDefault();
+      handleBoopPress(event);
+    },
+    { passive: false }
+  );
+  button.addEventListener('touchend', releaseHandler);
+  button.addEventListener('touchcancel', releaseHandler);
 }
 
 function spawnBoopFloat(amount) {
