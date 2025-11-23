@@ -17,6 +17,7 @@ body {
   background: #121212;
   color: #f5f5f5;
   font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', sans-serif;
+  cursor: default;
 }
 
 h1,
@@ -29,6 +30,14 @@ h3 {
 
 button {
   font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+}
+
+input[type='text'],
+textarea {
+  cursor: text;
+  user-select: text;
 }
 
 #top-bar {
@@ -68,6 +77,7 @@ button {
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.15s ease, transform 0.1s ease;
+  user-select: none;
 }
 
 .top-bar-icon:hover,
@@ -169,6 +179,19 @@ button {
   justify-content: center;
 }
 
+#boop-button {
+  width: 100%;
+  height: auto;
+  max-width: 320px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.08s ease-out;
+}
+
+#boop-button.boop-squish {
+  transform: scale(0.95);
+}
+
 #boop-image-wrapper {
   width: 100%;
   max-width: 320px;
@@ -235,22 +258,6 @@ button {
   opacity: 0.8;
 }
 
-#boop-button {
-  width: 100%;
-  max-width: 300px;
-  height: auto;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 0.05s ease-out;
-  display: block;
-  border-radius: 10px;
-}
-
-#boop-button.boop-squish {
-  transform: scale(0.95);
-}
-
 #crit-popup {
   position: absolute;
   top: 45%;
@@ -312,6 +319,7 @@ button {
   cursor: pointer;
   position: relative;
   transition: transform 0.1s ease, border-color 0.2s ease, opacity 0.2s ease;
+  user-select: none;
 }
 
 .click-upgrade-icon.purchased {
@@ -326,6 +334,10 @@ button {
 .click-upgrade-icon.locked {
   opacity: 0.3;
   cursor: default;
+}
+
+.click-upgrade-icon * {
+  user-select: none;
 }
 
 #click-upgrade-tooltip,
@@ -494,6 +506,12 @@ button {
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.skin-tile * {
+  user-select: none;
 }
 
 .skin-tile-header {

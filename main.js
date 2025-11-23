@@ -1516,11 +1516,9 @@ function applyOfflineProgress() {
 }
 
 function updateUI() {
-  const finalBpc = getFinalBpc();
   const finalBps = getFinalBps();
-  const formattedBoops = formatNumber(Math.floor(gameState.boops));
-  const formattedTotal = formatNumber(Math.floor(gameState.totalBoops));
-  const formattedBpc = formatNumber(Math.round(finalBpc * 100) / 100);
+  const formattedBoops = formatNumber(Math.round(gameState.boops * 100) / 100);
+  const formattedTotal = formatNumber(Math.round(gameState.totalBoops * 100) / 100);
   const formattedBps = formatNumber(Math.round(finalBps * 100) / 100);
 
   if (!gameState.currentFaction) {
@@ -1663,7 +1661,7 @@ function renderClickUpgradesGrid() {
       } else {
         tooltip.innerHTML = `<strong>${upgrade.name}</strong><br>${upgrade.description}<br>Cost: ${formatNumber(
           upgrade.cost
-        )} boops<br>+${Math.round((upgrade.bpcMultiplierBonus || 0) * 100)}% BPC`;
+        )} boops<br>+${Math.round((upgrade.bpcMultiplierBonus || 0) * 100)}% BPC (multiplicative)`;
       }
       tooltip.classList.remove('hidden');
       tooltip.style.left = `${event.pageX + 12}px`;
@@ -2177,7 +2175,10 @@ function updateStatsUI() {
     ui.statsCritMultiplier.textContent = `×${formatNumber(gameState.critMultiplier)}`;
   }
   if (ui.statsBpcMultiplier) {
-    ui.statsBpcMultiplier.textContent = formatNumber(gameState.bpcMultiplier);
+    const bpcMultDisplay = gameState.bpcMultiplier < 10
+      ? (Math.round(gameState.bpcMultiplier * 100) / 100).toFixed(2)
+      : formatNumber(Math.round(gameState.bpcMultiplier * 100) / 100);
+    ui.statsBpcMultiplier.textContent = bpcMultDisplay;
   }
   if (ui.statsBpsMultiplier) {
     ui.statsBpsMultiplier.textContent = formatNumber(gameState.bpsMultiplier);
@@ -2273,6 +2274,15 @@ function showAchievementPopup(achievement) {
   }, 2500);
 }
 
+function formatBoopGain(amount) {
+  if (!Number.isFinite(amount)) return '0';
+  const rounded = amount < 10 ? Math.round(amount * 100) / 100 : Math.round(amount);
+  if (rounded < 10) {
+    return rounded.toFixed(2);
+  }
+  return formatNumber(rounded);
+}
+
 function doBoop() {
   const baseGain = getFinalBpc();
   const isCrit = Math.random() < getEffectiveCritChance();
@@ -2285,7 +2295,7 @@ function doBoop() {
     gameState.totalCrits += 1;
   }
 
-  const appliedGain = addBoops(Math.max(1, Math.floor(gain)));
+  const appliedGain = addBoops(gain);
   const currentSkin = getCurrentSkin();
   if (currentSkin) {
     currentSkin.boops = (currentSkin.boops || 0) + 1;
@@ -2462,11 +2472,12 @@ function announceOfflineGain(gain, seconds) {
 
 function showCritPopup(value) {
   if (!ui.critPopup) return;
-  ui.critPopup.textContent = `CRITICAL BOOP! +${formatNumber(Math.floor(value))}`;
+  const gainText = formatBoopGain(value);
+  ui.critPopup.textContent = `CRITICAL BOOP! +${gainText}`;
   ui.critPopup.classList.remove('show');
   void ui.critPopup.offsetWidth;
   ui.critPopup.classList.add('show');
-  spawnFloatingText(`CRITICAL BOOP! +${formatNumber(Math.floor(value))}`, 'crit-floating');
+  spawnFloatingText(`CRITICAL BOOP! +${gainText}`, 'crit-floating');
 }
 
 function setBoopFace(src) {
@@ -2520,7 +2531,7 @@ function setupBoopButtonControls() {
 
 function spawnBoopFloat(amount) {
   if (!gameState.settings?.particlesEnabled || amount <= 0) return;
-  spawnFloatingText(`+${formatNumber(Math.floor(amount))}`);
+  spawnFloatingText(`+${formatBoopGain(amount)}`);
 }
 
 function spawnFloatingText(text, extraClass) {
