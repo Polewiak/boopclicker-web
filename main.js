@@ -7,8 +7,8 @@ const BASE_CRIT_CHANCE = 0.03;
 const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
-const BOOP_IMAGE_DEFAULT_SRC = './assets/Boop_Default_Skin_Unbooped.png';
-const BOOP_IMAGE_PRESSED_SRC = './assets/Boop_Default_Skin_Booped.png';
+const BOOP_IMAGE_DEFAULT_SRC = './assets/Default_Character_Idle.png';
+const BOOP_IMAGE_PRESSED_SRC = './assets/Default_Character_Booped.png';
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 // Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
