@@ -37,6 +37,7 @@ button {
 #boop-button,
 .click-upgrade-icon,
 .auto-booper-card,
+.auto-booper-item,
 .skin-tile,
 .top-bar-icon,
 .upgrade-card,
@@ -47,6 +48,7 @@ button {
 
 .click-upgrade-icon *,
 .auto-booper-card *,
+.auto-booper-item *,
 .skin-tile * {
   user-select: none;
 }

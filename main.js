@@ -711,7 +711,6 @@ let factionOverlayRendered = false;
 let boopHoldActive = false;
 let boopPressTimeout = null;
 let boopHoldFinished = false;
-let lastOrbitSignature = '';
 let lastParadeSignature = '';
 
 const ui = {
@@ -829,6 +828,7 @@ function updateStoreUI() {
   }
 
   updateUpgradeCardVisuals();
+  updateAutoBooperCardVisuals();
 }
 
 function updateUpgradeCardVisuals() {
@@ -868,57 +868,7 @@ function updateUpgradeCardVisuals() {
     }
   });
 
-    let maxOwnedIndex = -1;
-    gameState.autoBoopers.forEach((auto, idx) => {
-      if ((auto.owned || 0) > 0 && idx > maxOwnedIndex) {
-        maxOwnedIndex = idx;
-      }
-    });
-
-    gameState.autoBoopers.forEach((booper, index) => {
-      if (typeof booper.wasAffordable !== 'boolean') {
-        booper.wasAffordable = false;
-      }
-      const card = document.getElementById(`${booper.id}-autocard`);
-      if (!card) return;
-
-      const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
-      const unlocked = index === 0 ? true : prevOwned && index <= maxOwnedIndex + 1;
-      const affordable = unlocked && gameState.boops >= getAutoBooperCost(booper);
-      const priceLabel = card.querySelector('.auto-booper-cost');
-      const iconEl = card.querySelector('.auto-booper-icon');
-      const nameEl = card.querySelector('.auto-booper-name');
-      const metaEl = card.querySelector('.auto-booper-meta');
-
-      card.classList.remove('available', 'unavailable', 'locked', 'upgrade-just-unlocked');
-
-      if (!unlocked) {
-        if (iconEl) iconEl.textContent = '❔';
-        if (nameEl) nameEl.textContent = '???';
-        if (metaEl) metaEl.textContent = '';
-        if (priceLabel) priceLabel.textContent = '???';
-        card.classList.add('locked');
-        return;
-      }
-
-      if (iconEl) iconEl.textContent = booper.icon || '🏭';
-      if (nameEl) nameEl.textContent = booper.name;
-      if (metaEl)
-        metaEl.textContent = `Owned: ${formatNumber(booper.owned || 0)} • ${formatNumber(getAutoBooperBps(booper))} boops/s`;
-      if (priceLabel) priceLabel.textContent = `${formatNumber(getAutoBooperCost(booper))} boops`;
-
-      if (affordable) {
-        card.classList.add('available');
-        if (!booper.wasAffordable) {
-          card.classList.add('upgrade-just-unlocked');
-          booper.wasAffordable = true;
-          setTimeout(() => card.classList.remove('upgrade-just-unlocked'), 800);
-        }
-      } else {
-        card.classList.add('unavailable');
-      }
-    });
-  }
+}
 
 const modalControls = {
   backdrop: document.getElementById('modal-backdrop'),
@@ -939,6 +889,63 @@ function setupModals() {
     if (event.target === modalControls.backdrop) {
       closeModal();
     }
+  });
+}
+
+function updateAutoBooperCardVisuals() {
+  const container = ui.autoUpgradesContainer;
+  if (!container) return;
+
+  let maxOwnedIndex = -1;
+  gameState.autoBoopers.forEach((auto, index) => {
+    if ((auto.owned || 0) > 0 && index > maxOwnedIndex) {
+      maxOwnedIndex = index;
+    }
+    if (typeof auto.wasAffordable !== 'boolean') {
+      auto.wasAffordable = false;
+    }
+  });
+  const maxVisibleIndex = Math.min(gameState.autoBoopers.length - 1, maxOwnedIndex + 1);
+
+  gameState.autoBoopers.forEach((auto, index) => {
+    const card = document.getElementById(`${auto.id}-autocard`);
+    if (!card) return;
+
+    const iconEl = card.querySelector('.auto-booper-icon');
+    const nameEl = card.querySelector('.auto-booper-name');
+    const metaEl = card.querySelector('.auto-booper-meta');
+    const costEl = card.querySelector('.auto-booper-cost');
+
+    const prevOwned = index === 0 || (gameState.autoBoopers[index - 1].owned || 0) > 0;
+    const unlocked = index === 0 ? true : prevOwned && index <= maxVisibleIndex;
+
+    card.classList.remove('available', 'unavailable', 'locked', 'upgrade-just-unlocked');
+
+    if (!unlocked) {
+      card.classList.add('locked');
+      if (iconEl) iconEl.textContent = '❔';
+      if (nameEl) nameEl.textContent = '???';
+      if (metaEl) metaEl.textContent = '';
+      if (costEl) costEl.textContent = '???';
+      return;
+    }
+
+    const currentCost = getAutoBooperCost(auto);
+    const affordable = gameState.boops >= currentCost;
+
+    if (iconEl) iconEl.textContent = auto.icon || '🏭';
+    if (nameEl) nameEl.textContent = auto.name;
+    if (metaEl)
+      metaEl.textContent = `Owned: ${formatNumber(auto.owned || 0)} • ${formatNumber(getAutoBooperBps(auto))} boops/s`;
+    if (costEl) costEl.textContent = `${formatNumber(currentCost)} boops`;
+
+    card.classList.add(affordable ? 'available' : 'unavailable');
+    if (affordable && !auto.wasAffordable) {
+      card.classList.add('upgrade-just-unlocked');
+      const targetCard = card;
+      setTimeout(() => targetCard.classList.remove('upgrade-just-unlocked'), 800);
+    }
+    auto.wasAffordable = auto.wasAffordable || affordable;
   });
 }
 
@@ -1765,36 +1772,30 @@ function updateOrbitCrew() {
   if (!layer) return;
   const ownedTypes = gameState.autoBoopers.filter((auto) => (auto.owned || 0) > 0);
   const toRender = ownedTypes.slice(-12);
-  const signature = `${gameState.settings.showOrbitCrew ? 'on' : 'off'}|${toRender
-    .map((auto) => `${auto.id}:${auto.owned || 0}`)
-    .join(',')}`;
 
   if (!gameState.settings.showOrbitCrew || !toRender.length) {
     layer.innerHTML = '';
     layer.style.display = 'none';
-    lastOrbitSignature = signature;
     return;
   }
 
-  if (signature === lastOrbitSignature) {
-    return;
-  }
-
-  lastOrbitSignature = signature;
   layer.style.display = 'block';
   layer.innerHTML = '';
 
   const fragment = document.createDocumentFragment();
   const total = toRender.length;
-  const baseRadius = (ui.boopArea?.clientWidth || 240) * 0.6 + 32;
+  const radius = Math.max(96, (ui.boopArea?.clientWidth || 240) * 0.35 + 32);
 
   toRender.forEach((auto, index) => {
     const angle = (index / total) * Math.PI * 2;
-    const deg = (angle * 180) / Math.PI;
+    const offsetX = Math.cos(angle) * radius;
+    const offsetY = Math.sin(angle) * radius;
     const icon = document.createElement('div');
     icon.className = 'orbit-icon';
     icon.textContent = auto.icon || '🌀';
-    icon.style.transform = `rotate(${deg}deg) translate(${baseRadius}px) rotate(${-deg}deg)`;
+    icon.style.left = '50%';
+    icon.style.top = '50%';
+    icon.style.transform = `translate(-50%, -50%) translate(${offsetX}px, ${offsetY}px)`;
     fragment.appendChild(icon);
   });
 
@@ -1887,7 +1888,7 @@ function renderAutoBoopers() {
     const stateClass = affordable ? 'available' : 'unavailable';
 
     const card = document.createElement('div');
-    card.className = `auto-booper-card ${stateClass}`;
+    card.className = `auto-booper-card auto-booper-item ${stateClass}`;
     card.id = `${auto.id}-autocard`;
     card.dataset.id = auto.id;
     card.dataset.index = String(index);
@@ -1929,8 +1930,14 @@ function renderAutoBoopers() {
     card.addEventListener('mouseleave', hideUpgradeTooltips);
 
     card.addEventListener('click', () => {
-      if (!affordable) return;
-      buyAutoBooper(auto.id);
+      const latest = gameState.autoBoopers.find((item) => item.id === auto.id);
+      if (!latest) return;
+      const currentIdx = gameState.autoBoopers.indexOf(latest);
+      const prevOwned = currentIdx <= 0 || (gameState.autoBoopers[currentIdx - 1].owned || 0) > 0;
+      const liveCost = getAutoBooperCost(latest);
+      const canAfford = prevOwned && gameState.boops >= liveCost;
+      if (!canAfford) return;
+      buyAutoBooper(latest.id);
     });
 
     card.append(icon, infoWrap, costEl);
@@ -1942,7 +1949,7 @@ function renderAutoBoopers() {
 
   lockedToRender.forEach(({ auto, index }) => {
     const card = document.createElement('div');
-    card.className = 'auto-booper-card locked';
+    card.className = 'auto-booper-card auto-booper-item locked';
     card.id = `${auto.id}-autocard`;
     card.dataset.id = auto.id;
     card.dataset.index = String(index);
@@ -2745,8 +2752,10 @@ function spawnBoopParticle() {
 
 function maybeSpawnBoopParticle(bps) {
   if (!gameState.settings.showBoopRain) return;
-  const cappedChance = Math.min((bps || 0) / 1000, 0.25);
-  if (Math.random() < cappedChance) {
+  const rate = Math.max(0, bps || 0);
+  if (rate <= 0) return;
+  const chance = Math.min(0.05 + rate / 500, 0.35);
+  if (Math.random() < chance) {
     spawnBoopParticle();
   }
 }
