@@ -40,6 +40,8 @@
             <div id="boop-bps-value">0 boops / second</div>
           </div>
           <div id="boop-area">
+            <div id="boop-rain-layer" aria-hidden="true"></div>
+            <div id="orbit-crew-layer" aria-hidden="true"></div>
             <div id="boop-image-wrapper">
               <img
                 src="assets/Default_Character_Idle.png"
@@ -51,6 +53,7 @@
             </div>
             <div id="crit-popup" aria-hidden="true">CRITICAL! +0</div>
           </div>
+          <div id="ground-parade-layer" aria-hidden="true"></div>
         </div>
         <div id="player-inventory" aria-label="Purchased click upgrades">
           <h3>Inventory</h3>
@@ -165,6 +168,18 @@
         <label class="settings-row">
           <input type="checkbox" id="settings-shortnumbers" />
           Short number format (1.2K, 3.4M)
+        </label>
+        <label class="settings-row">
+          <input type="checkbox" id="settings-orbit-crew" />
+          Show orbit crew
+        </label>
+        <label class="settings-row">
+          <input type="checkbox" id="settings-ground-parade" />
+          Show ground parade
+        </label>
+        <label class="settings-row">
+          <input type="checkbox" id="settings-boop-rain" />
+          Show boop rain
         </label>
       </section>
 

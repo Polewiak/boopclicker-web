@@ -196,6 +196,30 @@ textarea {
   justify-content: center;
 }
 
+#boop-rain-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+#orbit-crew-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  animation: orbit-spin 26s linear infinite;
+}
+
+.orbit-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 16px;
+  transform-origin: center;
+}
+
 #boop-button {
   width: 100%;
   height: auto;
@@ -220,6 +244,66 @@ textarea {
   align-items: center;
   justify-content: center;
   padding: 8px;
+  z-index: 2;
+}
+
+#ground-parade-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 90px;
+  pointer-events: none;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 2;
+}
+
+.ground-walker {
+  position: relative;
+  font-size: 22px;
+  animation: ground-walk 9s linear infinite;
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.boop-particle {
+  position: absolute;
+  top: -10%;
+  font-size: 14px;
+  opacity: 0.9;
+  animation: boop-rain 1.2s linear forwards;
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ground-walk {
+  from {
+    transform: translateX(-20%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes boop-rain {
+  from {
+    transform: translateY(-10%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(120%);
+    opacity: 0;
+  }
 }
 
 #player-inventory {

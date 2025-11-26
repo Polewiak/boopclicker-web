@@ -9,6 +9,7 @@ const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
 const BOOP_IMAGE_DEFAULT_SRC = 'assets/Default_Character_Idle.png';
 const BOOP_IMAGE_PRESSED_SRC = 'assets/Default_Character_Booped.png';
+const BOOP_FACE_DURATION_MS = 350;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 // Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
@@ -687,6 +688,9 @@ const gameState = {
     soundEnabled: true,
     particlesEnabled: true,
     shortNumbers: true,
+    showOrbitCrew: true,
+    showGroundParade: true,
+    showBoopRain: true,
   },
   totalClicks: 0,
   totalCrits: 0,
@@ -707,12 +711,19 @@ let factionOverlayRendered = false;
 let boopHoldActive = false;
 let boopPressTimeout = null;
 let boopHoldFinished = false;
+let lastOrbitSignature = '';
+let lastParadeSignature = '';
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
   boopCountValue: document.getElementById('boop-count-value'),
   boopBpsValue: document.getElementById('boop-bps-value'),
+  boopPanel: document.getElementById('boop-panel'),
+  boopArea: document.getElementById('boop-area'),
   boopButton: document.getElementById('boop-button'),
+  orbitCrewLayer: document.getElementById('orbit-crew-layer'),
+  groundParadeLayer: document.getElementById('ground-parade-layer'),
+  boopRainLayer: document.getElementById('boop-rain-layer'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
@@ -762,6 +773,9 @@ const ui = {
   settingsSound: document.getElementById('settings-sound'),
   settingsParticles: document.getElementById('settings-particles'),
   settingsShortNumbers: document.getElementById('settings-shortnumbers'),
+  settingsOrbitCrew: document.getElementById('settings-orbit-crew'),
+  settingsGroundParade: document.getElementById('settings-ground-parade'),
+  settingsBoopRain: document.getElementById('settings-boop-rain'),
   dailyBoxFloatButton: document.getElementById('daily-box-float-button'),
   dailyBoxFloatTimer: document.getElementById('daily-box-float-timer'),
 };
@@ -1084,11 +1098,17 @@ function initSettingsUI() {
   const soundInput = ui.settingsSound;
   const particlesInput = ui.settingsParticles;
   const shortNumbersInput = ui.settingsShortNumbers;
-  if (!soundInput || !particlesInput || !shortNumbersInput) return;
+  const orbitInput = ui.settingsOrbitCrew;
+  const paradeInput = ui.settingsGroundParade;
+  const rainInput = ui.settingsBoopRain;
+  if (!soundInput || !particlesInput || !shortNumbersInput || !orbitInput || !paradeInput || !rainInput) return;
 
   soundInput.checked = !!gameState.settings.soundEnabled;
   particlesInput.checked = !!gameState.settings.particlesEnabled;
   shortNumbersInput.checked = !!gameState.settings.shortNumbers;
+  orbitInput.checked = !!gameState.settings.showOrbitCrew;
+  paradeInput.checked = !!gameState.settings.showGroundParade;
+  rainInput.checked = !!gameState.settings.showBoopRain;
 
   soundInput.addEventListener('change', () => {
     gameState.settings.soundEnabled = soundInput.checked;
@@ -1102,6 +1122,21 @@ function initSettingsUI() {
     gameState.settings.shortNumbers = shortNumbersInput.checked;
     saveGame();
     updateUI();
+  });
+  orbitInput.addEventListener('change', () => {
+    gameState.settings.showOrbitCrew = orbitInput.checked;
+    saveGame();
+    updateOrbitCrew();
+  });
+  paradeInput.addEventListener('change', () => {
+    gameState.settings.showGroundParade = paradeInput.checked;
+    saveGame();
+    refreshGroundParade();
+  });
+  rainInput.addEventListener('change', () => {
+    gameState.settings.showBoopRain = rainInput.checked;
+    saveGame();
+    updateBoopRainVisibility();
   });
 }
 
@@ -1166,6 +1201,9 @@ function loadGame() {
       soundEnabled: true,
       particlesEnabled: true,
       shortNumbers: true,
+      showOrbitCrew: true,
+      showGroundParade: true,
+      showBoopRain: true,
       ...(typeof data.settings === 'object' ? data.settings : {}),
     };
     const savedSkins = Array.isArray(data.skins) ? data.skins : [];
@@ -1567,6 +1605,9 @@ function updateUI() {
 
   updateStoreUI();
   renderInventory();
+  updateOrbitCrew();
+  refreshGroundParade();
+  updateBoopRainVisibility();
   updatePrestigeUI();
   renderMetaPerks();
   renderFactions();
@@ -1716,6 +1757,97 @@ function renderInventory() {
     item.className = 'inventory-item';
     item.textContent = upgrade.icon || '★';
     container.appendChild(item);
+  });
+}
+
+function updateOrbitCrew() {
+  const layer = ui.orbitCrewLayer;
+  if (!layer) return;
+  const ownedTypes = gameState.autoBoopers.filter((auto) => (auto.owned || 0) > 0);
+  const toRender = ownedTypes.slice(-12);
+  const signature = `${gameState.settings.showOrbitCrew ? 'on' : 'off'}|${toRender
+    .map((auto) => `${auto.id}:${auto.owned || 0}`)
+    .join(',')}`;
+
+  if (!gameState.settings.showOrbitCrew || !toRender.length) {
+    layer.innerHTML = '';
+    layer.style.display = 'none';
+    lastOrbitSignature = signature;
+    return;
+  }
+
+  if (signature === lastOrbitSignature) {
+    return;
+  }
+
+  lastOrbitSignature = signature;
+  layer.style.display = 'block';
+  layer.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
+  const total = toRender.length;
+  const baseRadius = (ui.boopArea?.clientWidth || 240) * 0.6 + 32;
+
+  toRender.forEach((auto, index) => {
+    const angle = (index / total) * Math.PI * 2;
+    const deg = (angle * 180) / Math.PI;
+    const icon = document.createElement('div');
+    icon.className = 'orbit-icon';
+    icon.textContent = auto.icon || '🌀';
+    icon.style.transform = `rotate(${deg}deg) translate(${baseRadius}px) rotate(${-deg}deg)`;
+    fragment.appendChild(icon);
+  });
+
+  layer.appendChild(fragment);
+}
+
+function refreshGroundParade() {
+  const layer = ui.groundParadeLayer;
+  if (!layer) return;
+  if (!gameState.settings.showGroundParade) {
+    layer.innerHTML = '';
+    layer.style.display = 'none';
+    return;
+  }
+
+  layer.style.display = 'flex';
+  layer.innerHTML = '';
+
+  const walkers = [];
+  gameState.autoBoopers.forEach((auto) => {
+    const owned = auto.owned || 0;
+    if (owned > 0) {
+      const count = Math.min(3, Math.max(1, Math.floor(owned / 10) + 1));
+      for (let i = 0; i < count; i += 1) {
+        walkers.push(auto);
+        if (walkers.length >= 12) break;
+      }
+    }
+  });
+
+  const signature = `${gameState.settings.showGroundParade ? 'on' : 'off'}|${walkers
+    .map((auto) => `${auto.id}:${auto.owned || 0}`)
+    .join(',')}`;
+
+  if (!walkers.length) {
+    layer.style.display = 'none';
+    lastParadeSignature = signature;
+    return;
+  }
+
+  if (signature === lastParadeSignature) {
+    return;
+  }
+  lastParadeSignature = signature;
+
+  walkers.slice(0, 12).forEach((auto) => {
+    const walker = document.createElement('div');
+    walker.className = 'ground-walker';
+    walker.textContent = auto.icon || '🐾';
+    const duration = 7 + Math.random() * 4;
+    walker.style.animationDuration = `${duration}s`;
+    walker.style.animationDelay = `${Math.random() * 3}s`;
+    layer.appendChild(walker);
   });
 }
 
@@ -2449,6 +2581,7 @@ function gameLoop() {
       addBoops(gain);
     }
   }
+  maybeSpawnBoopParticle(passiveGainPerSecond);
   gameState.lastUpdate = now;
   saveTimer += elapsedSeconds;
 
@@ -2527,7 +2660,7 @@ function handleBoopPress(event) {
       setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
       ui.boopButton.classList.remove('boop-squish');
     }
-  }, 500);
+  }, BOOP_FACE_DURATION_MS);
 
   playSfx('boop');
   doBoop();
@@ -2581,6 +2714,41 @@ function spawnFloatingText(text, extraClass) {
     popup.style.opacity = '0';
   });
   setTimeout(() => popup.remove(), 700);
+}
+
+function updateBoopRainVisibility() {
+  const layer = ui.boopRainLayer;
+  if (!layer) return;
+  if (gameState.settings.showBoopRain) {
+    layer.style.display = 'block';
+  } else {
+    layer.style.display = 'none';
+    layer.innerHTML = '';
+  }
+}
+
+function spawnBoopParticle() {
+  const layer = ui.boopRainLayer;
+  if (!layer || !gameState.settings.showBoopRain) return;
+  const rect = layer.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  const particle = document.createElement('span');
+  particle.className = 'boop-particle';
+  particle.textContent = '🐾';
+  particle.style.left = `${Math.random() * 100}%`;
+  const duration = 1 + Math.random() * 0.5;
+  particle.style.animationDuration = `${duration}s`;
+  layer.appendChild(particle);
+  setTimeout(() => particle.remove(), duration * 1000 + 200);
+}
+
+function maybeSpawnBoopParticle(bps) {
+  if (!gameState.settings.showBoopRain) return;
+  const cappedChance = Math.min((bps || 0) / 1000, 0.25);
+  if (Math.random() < cappedChance) {
+    spawnBoopParticle();
+  }
 }
 
 function flashStoreRow(id) {
