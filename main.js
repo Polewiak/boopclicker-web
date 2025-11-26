@@ -7,8 +7,8 @@ const BASE_CRIT_CHANCE = 0.03;
 const BASE_OFFLINE_EFFICIENCY = 0.5;
 const PRESTIGE_THRESHOLD = 1_000_000;
 const DEBUG_BOOST_AMOUNT = 10_000_000;
-const BOOP_IMAGE_DEFAULT_SRC = './assets/Default_Character_Idle.png';
-const BOOP_IMAGE_PRESSED_SRC = './assets/Default_Character_Booped.png';
+const BOOP_IMAGE_DEFAULT_SRC = 'assets/Default_Character_Idle.png';
+const BOOP_IMAGE_PRESSED_SRC = 'assets/Default_Character_Booped.png';
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 // Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
@@ -705,6 +705,8 @@ let storeNeedsRender = true;
 let lastUnlockedClickCount = 0;
 let factionOverlayRendered = false;
 let boopHoldActive = false;
+let boopPressTimeout = null;
+let boopHoldFinished = false;
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
@@ -996,7 +998,14 @@ function initGame() {
 }
 
 function initSfx() {
-  sfx.boop = document.getElementById('sfx-boop');
+  try {
+    sfx.boop = new Audio('assets/sfx/boop-01.mp3');
+  } catch (error) {
+    sfx.boop = null;
+  }
+  if (!sfx.boop) {
+    sfx.boop = document.getElementById('sfx-boop');
+  }
   sfx.crit = document.getElementById('sfx-crit');
   sfx.buy = document.getElementById('sfx-prestige');
 }
@@ -2308,7 +2317,9 @@ function doBoop() {
     currentSkin.boops = (currentSkin.boops || 0) + 1;
   }
   spawnBoopFloat(appliedGain);
-  playSfx(isCrit ? 'crit' : 'boop');
+  if (isCrit) {
+    playSfx('crit');
+  }
 
   if (isCrit) {
     gameState.lastCritValue = appliedGain;
@@ -2504,8 +2515,21 @@ function handleBoopPress(event) {
   if (!ui.boopButton) return;
 
   boopHoldActive = true;
+  boopHoldFinished = false;
   setBoopFace(BOOP_IMAGE_PRESSED_SRC);
   ui.boopButton.classList.add('boop-squish');
+  if (boopPressTimeout) {
+    clearTimeout(boopPressTimeout);
+  }
+  boopPressTimeout = setTimeout(() => {
+    boopHoldFinished = true;
+    if (!boopHoldActive) {
+      setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
+      ui.boopButton.classList.remove('boop-squish');
+    }
+  }, 500);
+
+  playSfx('boop');
   doBoop();
 }
 
@@ -2513,8 +2537,10 @@ function handleBoopRelease() {
   if (!ui.boopButton) return;
 
   boopHoldActive = false;
-  setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
-  ui.boopButton.classList.remove('boop-squish');
+  if (boopHoldFinished) {
+    setBoopFace(BOOP_IMAGE_DEFAULT_SRC);
+    ui.boopButton.classList.remove('boop-squish');
+  }
 }
 
 function setupBoopButtonControls() {
@@ -2523,21 +2549,12 @@ function setupBoopButtonControls() {
 
   const releaseHandler = () => handleBoopRelease();
 
-  button.addEventListener('mousedown', (event) => {
+  button.addEventListener('pointerdown', (event) => {
     handleBoopPress(event);
   });
-  button.addEventListener('mouseup', releaseHandler);
-  button.addEventListener('mouseleave', releaseHandler);
-  button.addEventListener(
-    'touchstart',
-    (event) => {
-      event.preventDefault();
-      handleBoopPress(event);
-    },
-    { passive: false }
-  );
-  button.addEventListener('touchend', releaseHandler);
-  button.addEventListener('touchcancel', releaseHandler);
+  button.addEventListener('pointerup', releaseHandler);
+  button.addEventListener('pointerleave', releaseHandler);
+  button.addEventListener('pointercancel', releaseHandler);
 }
 
 function spawnBoopFloat(amount) {
