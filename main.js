@@ -712,6 +712,7 @@ let boopHoldActive = false;
 let boopPressTimeout = null;
 let boopHoldFinished = false;
 let lastParadeSignature = '';
+let autoBooperClickHandlerAttached = false;
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
@@ -808,6 +809,29 @@ function hideUpgradeTooltips() {
     ui.autoBooperTooltip.classList.add('hidden');
     ui.autoBooperTooltip.textContent = '';
   }
+}
+
+function attachAutoBooperDelegation() {
+  if (autoBooperClickHandlerAttached) return;
+  const container = ui.autoUpgradesContainer;
+  if (!container) return;
+  container.addEventListener('click', (event) => {
+    const card = event.target.closest('.auto-booper-card');
+    if (!card || !container.contains(card)) return;
+    if (card.classList.contains('locked')) return;
+
+    const booperId = card.dataset.id;
+    const booper = gameState.autoBoopers.find((item) => item.id === booperId);
+    if (!booper) return;
+
+    const idx = gameState.autoBoopers.indexOf(booper);
+    const prevOwned = idx <= 0 || (gameState.autoBoopers[idx - 1]?.owned || 0) > 0;
+    const liveCost = getAutoBooperCost(booper);
+    const canAfford = prevOwned && Math.floor(Number(gameState.boops) || 0) >= liveCost;
+    if (!canAfford) return;
+    buyAutoBooper(booper.id);
+  });
+  autoBooperClickHandlerAttached = true;
 }
 
 function getUnlockedClickUpgradeCount() {
@@ -1002,7 +1026,6 @@ function initGame() {
   initTitleUI();
   initSettingsUI();
   initShareUI();
-  initDailyBoxUI();
   renderFactionOverlay();
   if (!gameState.currentFaction) {
     showFactionOverlay();
@@ -1033,6 +1056,7 @@ function initSfx() {
 
 function attachHandlers() {
   setupBoopButtonControls();
+  attachAutoBooperDelegation();
   ui.prestigeButton?.addEventListener('click', () => {
     doPrestige();
   });
@@ -1620,7 +1644,6 @@ function updateUI() {
   renderFactions();
   updateStatsUI();
   updateAchievementsUI();
-  updateDailyBoxFloatUI();
 }
 
 function updateDailyBoxState() {
@@ -1784,7 +1807,7 @@ function updateOrbitCrew() {
 
   const fragment = document.createDocumentFragment();
   const total = toRender.length;
-  const radius = Math.max(96, (ui.boopArea?.clientWidth || 240) * 0.35 + 32);
+  const radius = Math.max(110, (ui.boopArea?.clientWidth || 240) * 0.4);
 
   toRender.forEach((auto, index) => {
     const angle = (index / total) * Math.PI * 2;
@@ -1906,7 +1929,7 @@ function renderAutoBoopers() {
 
     const metaEl = document.createElement('div');
     metaEl.className = 'auto-booper-meta';
-    metaEl.textContent = `Owned: ${formatNumber(auto.owned || 0)} • ${formatNumber(getAutoBooperBps(auto))} boops/s`;
+    metaEl.textContent = `Owned: ${formatNumber(auto.owned || 0)}`;
 
     infoWrap.append(nameEl, metaEl);
 
@@ -1919,7 +1942,7 @@ function renderAutoBoopers() {
       if (!tooltip) return;
       const unitBps = formatNumber(auto.baseBps);
       const totalBps = formatNumber(getAutoBooperBps(auto));
-      tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(currentCost)} boops<br>+${unitBps} BPS per unit (total ${totalBps})`;
+      tooltip.innerHTML = `<strong>${auto.name}</strong><br>${auto.description}<br>Cost: ${formatNumber(currentCost)} boops<br>+${unitBps} BPS per unit<br>Total from this type: ${totalBps} BPS`;
       tooltip.classList.remove('hidden');
       tooltip.style.left = `${event.pageX + 12}px`;
       tooltip.style.top = `${event.pageY + 12}px`;
@@ -1928,17 +1951,6 @@ function renderAutoBoopers() {
     card.addEventListener('mouseenter', (event) => showAutoTooltip(event));
     card.addEventListener('mousemove', (event) => showAutoTooltip(event));
     card.addEventListener('mouseleave', hideUpgradeTooltips);
-
-    card.addEventListener('click', () => {
-      const latest = gameState.autoBoopers.find((item) => item.id === auto.id);
-      if (!latest) return;
-      const currentIdx = gameState.autoBoopers.indexOf(latest);
-      const prevOwned = currentIdx <= 0 || (gameState.autoBoopers[currentIdx - 1].owned || 0) > 0;
-      const liveCost = getAutoBooperCost(latest);
-      const canAfford = prevOwned && gameState.boops >= liveCost;
-      if (!canAfford) return;
-      buyAutoBooper(latest.id);
-    });
 
     card.append(icon, infoWrap, costEl);
     fragment.appendChild(card);
@@ -1967,7 +1979,12 @@ function renderAutoBoopers() {
 
     const metaEl = document.createElement('div');
     metaEl.className = 'auto-booper-meta';
-    metaEl.textContent = '';
+    const prev = gameState.autoBoopers[index - 1];
+    if (prev) {
+      metaEl.textContent = `Unlock after buying ${prev.name}`;
+    } else {
+      metaEl.textContent = 'Unlock later';
+    }
 
     infoWrap.append(nameEl, metaEl);
 
@@ -2742,7 +2759,8 @@ function spawnBoopParticle() {
 
   const particle = document.createElement('span');
   particle.className = 'boop-particle';
-  particle.textContent = '🐾';
+  const currentSkin = getCurrentSkin();
+  particle.textContent = currentSkin?.avatar || '🐾';
   particle.style.left = `${Math.random() * 100}%`;
   const duration = 1 + Math.random() * 0.5;
   particle.style.animationDuration = `${duration}s`;

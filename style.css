@@ -149,27 +149,6 @@ textarea {
   z-index: 1;
 }
 
-#daily-box-float {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #202020;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 150;
-}
-
-#daily-box-float-button {
-  font-size: 12px;
-  padding: 2px 6px;
-}
-
 #boop-header {
   text-align: center;
   margin-bottom: 12px;
@@ -202,7 +181,7 @@ textarea {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
   overflow: hidden;
 }
 
@@ -274,7 +253,7 @@ textarea {
 .boop-particle {
   position: absolute;
   top: -10%;
-  font-size: 14px;
+  font-size: 16px;
   opacity: 0.9;
   animation: boop-rain 1.2s linear forwards;
 }
