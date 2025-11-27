@@ -119,6 +119,7 @@ textarea {
 
 #boop-panel {
   position: sticky;
+  /* The panel becomes the containing block for falling heads and other overlays. */
   top: var(--topbar-height);
   align-self: flex-start;
   height: calc(100vh - var(--topbar-height));
@@ -135,6 +136,14 @@ textarea {
   overflow: hidden;
 }
 
+.falling-heads-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
 #boop-panel::before {
   content: '';
   position: absolute;
@@ -144,7 +153,7 @@ textarea {
   z-index: 0;
 }
 
-#boop-panel > :not(#boop-rain-layer) {
+#boop-panel > :not(.falling-heads-layer) {
   position: relative;
   z-index: 2;
 }
@@ -177,12 +186,24 @@ textarea {
   justify-content: center;
 }
 
-#boop-rain-layer {
+.falling-head {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
+  top: -32px;
+  font-size: 26px;
+  opacity: 0.95;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  animation: falling-head 3.5s linear forwards;
+}
+
+@keyframes falling-head {
+  0% {
+    transform: translateY(0);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(120%);
+    opacity: 0;
+  }
 }
 
 #orbit-crew-layer {
@@ -250,15 +271,6 @@ textarea {
   align-items: flex-end;
 }
 
-.boop-particle {
-  position: absolute;
-  top: -10%;
-  font-size: 18px;
-  opacity: 0.95;
-  animation: boop-rain 1.2s linear forwards;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
-}
-
 @keyframes orbit-spin {
   from {
     transform: rotate(0deg);
@@ -274,17 +286,6 @@ textarea {
   }
   to {
     transform: translateX(120%);
-  }
-}
-
-@keyframes boop-rain {
-  from {
-    transform: translateY(-10%);
-    opacity: 0.9;
-  }
-  to {
-    transform: translateY(120%);
-    opacity: 0;
   }
 }
 

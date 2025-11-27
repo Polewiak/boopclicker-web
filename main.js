@@ -713,6 +713,7 @@ let boopPressTimeout = null;
 let boopHoldFinished = false;
 let lastParadeSignature = '';
 let autoBooperClickHandlerAttached = false;
+let fallingHeadAccumulator = 0;
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
@@ -723,7 +724,7 @@ const ui = {
   boopButton: document.getElementById('boop-button'),
   orbitCrewLayer: document.getElementById('orbit-crew-layer'),
   groundParadeLayer: document.getElementById('ground-parade-layer'),
-  boopRainLayer: document.getElementById('boop-rain-layer'),
+  fallingHeadsLayer: document.getElementById('falling-heads-layer'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
@@ -1167,7 +1168,7 @@ function initSettingsUI() {
   rainInput.addEventListener('change', () => {
     gameState.settings.showBoopRain = rainInput.checked;
     saveGame();
-    updateBoopRainVisibility();
+    updateFallingHeadsVisibility();
   });
 }
 
@@ -1638,7 +1639,7 @@ function updateUI() {
   renderInventory();
   updateOrbitCrew();
   refreshGroundParade();
-  updateBoopRainVisibility();
+  updateFallingHeadsVisibility();
   updatePrestigeUI();
   renderMetaPerks();
   renderFactions();
@@ -2608,7 +2609,7 @@ function gameLoop() {
       addBoops(gain);
     }
   }
-  maybeSpawnBoopParticle(passiveGainPerSecond);
+  updateFallingHeads(elapsedSeconds, passiveGainPerSecond);
   gameState.lastUpdate = now;
   saveTimer += elapsedSeconds;
 
@@ -2743,8 +2744,9 @@ function spawnFloatingText(text, extraClass) {
   setTimeout(() => popup.remove(), 700);
 }
 
-function updateBoopRainVisibility() {
-  const layer = ui.boopRainLayer;
+// Control visibility of the falling-heads layer; leave particles intact when hidden.
+function updateFallingHeadsVisibility() {
+  const layer = ui.fallingHeadsLayer;
   if (!layer) return;
   if (gameState.settings.showBoopRain) {
     layer.style.display = 'block';
@@ -2754,30 +2756,47 @@ function updateBoopRainVisibility() {
   }
 }
 
-function spawnBoopParticle() {
-  const layer = ui.boopRainLayer;
+function getFallingHeadSpawnRatePerSecond(bps) {
+  // Map BPS into a visible-but-clamped spawn rate (1..20 per second).
+  const safeBps = Math.max(0, Number(bps) || 0);
+  if (!gameState.settings.showBoopRain) return 0;
+  const scaled = safeBps / 20;
+  return Math.min(20, Math.max(1, scaled));
+}
+
+function spawnFallingHead() {
+  const layer = ui.fallingHeadsLayer;
   if (!layer || !gameState.settings.showBoopRain) return;
   const rect = layer.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
 
   const particle = document.createElement('span');
-  particle.className = 'boop-particle';
+  particle.className = 'falling-head';
   const currentSkin = getCurrentSkin();
   particle.textContent = currentSkin?.avatar || '🐾';
-  particle.style.left = `${Math.random() * 100}%`;
-  const duration = 1 + Math.random() * 0.5;
+  const x = Math.random() * rect.width;
+  particle.style.left = `${x}px`;
+  const duration = 3 + Math.random();
   particle.style.animationDuration = `${duration}s`;
   layer.appendChild(particle);
-  setTimeout(() => particle.remove(), duration * 1000 + 200);
+
+  // Cleanup after the animation completes to avoid DOM leaks.
+  setTimeout(() => particle.remove(), duration * 1000 + 250);
 }
 
-function maybeSpawnBoopParticle(bps) {
+function updateFallingHeads(elapsedSeconds, bps) {
+  updateFallingHeadsVisibility();
   if (!gameState.settings.showBoopRain) return;
-  const rate = Math.max(0, bps || 0);
-  if (rate <= 0) return;
-  const chance = Math.min(0.05 + rate / 500, 0.35);
-  if (Math.random() < chance) {
-    spawnBoopParticle();
+  const ratePerSecond = getFallingHeadSpawnRatePerSecond(bps);
+  if (ratePerSecond <= 0) return;
+
+  fallingHeadAccumulator += ratePerSecond * Math.max(0, elapsedSeconds || 0);
+  let spawned = 0;
+  const maxPerFrame = 15;
+  while (fallingHeadAccumulator >= 1 && spawned < maxPerFrame) {
+    spawnFallingHead();
+    fallingHeadAccumulator -= 1;
+    spawned += 1;
   }
 }
 
