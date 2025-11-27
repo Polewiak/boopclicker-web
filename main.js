@@ -1793,10 +1793,12 @@ function renderInventory() {
 function updateOrbitCrew() {
   const layer = ui.orbitCrewLayer;
   if (!layer) return;
-  const ownedTypes = gameState.autoBoopers.filter((auto) => (auto.owned || 0) > 0);
-  const toRender = ownedTypes.slice(-12);
+  const firstBooper = gameState.autoBoopers?.[0];
+  const firstOwned = Math.max(0, firstBooper?.owned || 0);
+  const maxIcons = 20;
+  const iconCount = Math.min(maxIcons, firstOwned);
 
-  if (!gameState.settings.showOrbitCrew || !toRender.length) {
+  if (!gameState.settings.showOrbitCrew || iconCount === 0) {
     layer.innerHTML = '';
     layer.style.display = 'none';
     return;
@@ -1806,21 +1808,22 @@ function updateOrbitCrew() {
   layer.innerHTML = '';
 
   const fragment = document.createDocumentFragment();
-  const total = toRender.length;
+  const total = iconCount;
   const radius = Math.max(110, (ui.boopArea?.clientWidth || 240) * 0.4);
+  const iconGlyph = firstBooper?.icon || '🌀';
 
-  toRender.forEach((auto, index) => {
-    const angle = (index / total) * Math.PI * 2;
+  for (let i = 0; i < total; i += 1) {
+    const angle = (i / total) * Math.PI * 2;
     const offsetX = Math.cos(angle) * radius;
     const offsetY = Math.sin(angle) * radius;
     const icon = document.createElement('div');
     icon.className = 'orbit-icon';
-    icon.textContent = auto.icon || '🌀';
+    icon.textContent = iconGlyph;
     icon.style.left = '50%';
     icon.style.top = '50%';
     icon.style.transform = `translate(-50%, -50%) translate(${offsetX}px, ${offsetY}px)`;
     fragment.appendChild(icon);
-  });
+  }
 
   layer.appendChild(fragment);
 }
@@ -1841,7 +1844,7 @@ function refreshGroundParade() {
   gameState.autoBoopers.forEach((auto) => {
     const owned = auto.owned || 0;
     if (owned > 0) {
-      const count = Math.min(3, Math.max(1, Math.floor(owned / 10) + 1));
+      const count = Math.min(8, owned);
       for (let i = 0; i < count; i += 1) {
         walkers.push(auto);
         if (walkers.length >= 12) break;

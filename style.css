@@ -144,9 +144,9 @@ textarea {
   z-index: 0;
 }
 
-#boop-panel > * {
+#boop-panel > :not(#boop-rain-layer) {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 #boop-header {
@@ -181,7 +181,7 @@ textarea {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
   overflow: hidden;
 }
 
@@ -253,9 +253,10 @@ textarea {
 .boop-particle {
   position: absolute;
   top: -10%;
-  font-size: 16px;
-  opacity: 0.9;
+  font-size: 18px;
+  opacity: 0.95;
   animation: boop-rain 1.2s linear forwards;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes orbit-spin {
