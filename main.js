@@ -2776,8 +2776,12 @@ function spawnFallingHead() {
   particle.textContent = currentSkin?.avatar || '🐾';
   const x = Math.random() * rect.width;
   particle.style.left = `${x}px`;
-  const duration = 3 + Math.random();
+  // Randomize duration (4s–8s) so some heads fall slightly faster/slower.
+  const duration = 4 + Math.random() * 4;
   particle.style.animationDuration = `${duration}s`;
+  // Randomize size slightly (0.9x–1.2x) for visual variety.
+  const sizeScale = 0.9 + Math.random() * 0.3;
+  particle.style.fontSize = `${Math.round(26 * sizeScale)}px`;
   layer.appendChild(particle);
 
   // Cleanup after the animation completes to avoid DOM leaks.
