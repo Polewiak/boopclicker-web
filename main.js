@@ -713,7 +713,7 @@ let boopPressTimeout = null;
 let boopHoldFinished = false;
 let lastParadeSignature = '';
 let autoBooperClickHandlerAttached = false;
-let fallingHeadsController = null;
+wlet fallingHeadsController = null;
 let lastComputedBps = 0;
 
 const ui = {
