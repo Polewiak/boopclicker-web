@@ -193,6 +193,9 @@ textarea {
   animation-timing-function: linear;
   animation-fill-mode: forwards;
   pointer-events: none;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  opacity: 0.9;
 }
 
 @keyframes fallingHead {

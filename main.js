@@ -713,7 +713,7 @@ let boopPressTimeout = null;
 let boopHoldFinished = false;
 let lastParadeSignature = '';
 let autoBooperClickHandlerAttached = false;
-wlet fallingHeadsController = null;
+let fallingHeadsController = null;
 let lastComputedBps = 0;
 
 const ui = {
@@ -1174,7 +1174,7 @@ function initSettingsUI() {
       ui.fallingHeadsLayer.style.display = gameState.settings.showBoopRain ? 'block' : 'none';
     }
     if (fallingHeadsController) {
-      fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
+    fallingHeadsController.update(lastComputedBps, getCurrentHeadGlyph());
     }
   });
 }
@@ -1440,6 +1440,12 @@ function getCurrentHeadIconUrl() {
   return BOOP_IMAGE_DEFAULT_SRC;
 }
 
+function getCurrentHeadGlyph() {
+  // Prefer the active skin avatar as a text fallback when image assets are missing.
+  const current = getCurrentSkin();
+  return current?.avatar || '🐾';
+}
+
 function syncAvatarWithSkin() {
   const current = getCurrentSkin();
   if (current?.avatar) {
@@ -1652,7 +1658,7 @@ function updateUI() {
   updateOrbitCrew();
   refreshGroundParade();
   if (fallingHeadsController) {
-    fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
+    fallingHeadsController.update(lastComputedBps, getCurrentHeadGlyph());
   }
   updatePrestigeUI();
   renderMetaPerks();
@@ -1809,7 +1815,7 @@ function updateOrbitCrew() {
   const layer = ui.orbitCrewLayer;
   if (!layer) return;
   const firstBooper = gameState.autoBoopers?.[0];
-  const firstOwned = Math.max(0, firstBooper?.owned || 0);
+  const firstOwned = Math.max(0, Number(firstBooper?.owned) || 0);
   const maxIcons = 20;
   const iconCount = Math.min(maxIcons, firstOwned);
 
@@ -2625,7 +2631,7 @@ function gameLoop() {
   }
   lastComputedBps = passiveGainPerSecond;
   if (fallingHeadsController) {
-    fallingHeadsController.update(passiveGainPerSecond, getCurrentHeadIconUrl());
+    fallingHeadsController.update(passiveGainPerSecond, getCurrentHeadGlyph());
   }
   gameState.lastUpdate = now;
   saveTimer += elapsedSeconds;
@@ -2764,15 +2770,15 @@ function spawnFloatingText(text, extraClass) {
 class FallingHeadsLayer {
   constructor(layer) {
     this.layer = layer;
-    this.iconUrl = BOOP_IMAGE_DEFAULT_SRC;
+    this.iconGlyph = '🐾';
     this.spawnIntervalMs = 500;
     this.intervalId = null;
     this.counter = 0;
   }
 
-  setIcon(url) {
-    // Default to the main idle art if no explicit skin icon is available.
-    this.iconUrl = url || BOOP_IMAGE_DEFAULT_SRC;
+  setIcon(glyph) {
+    // Default to a paw emoji when no explicit skin avatar is available.
+    this.iconGlyph = glyph || '🐾';
   }
 
   setSpawnRateFromBps(bps) {
@@ -2806,23 +2812,21 @@ class FallingHeadsLayer {
 
   spawn() {
     if (!this.layer || !gameState.settings.showBoopRain) return;
-    const particle = document.createElement('img');
+    const particle = document.createElement('div');
     particle.className = 'falling-head-particle';
-    particle.src = this.iconUrl;
-    particle.alt = 'Falling head';
+    particle.textContent = this.iconGlyph;
     particle.style.left = `${Math.random() * 100}%`;
     const size = 24 + Math.random() * 8;
-    particle.style.width = `${size}px`;
-    particle.style.height = `${size}px`;
+    particle.style.fontSize = `${size}px`;
     const duration = 4 + Math.random() * 4;
     particle.style.animationDuration = `${duration}s`;
     particle.addEventListener('animationend', () => particle.remove());
     this.layer.appendChild(particle);
   }
 
-  update(bps, iconUrl) {
+  update(bps, iconGlyph) {
     if (!this.layer) return;
-    this.setIcon(iconUrl);
+    this.setIcon(iconGlyph);
     if (!gameState.settings.showBoopRain) {
       this.stop();
       this.layer.innerHTML = '';
@@ -2841,7 +2845,7 @@ function initFallingHeadsLayer() {
   // Create a fresh controller and kick off the spawn loop using the current BPS snapshot.
   fallingHeadsController = new FallingHeadsLayer(layer);
   layer.style.display = gameState.settings.showBoopRain ? 'block' : 'none';
-  fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
+  fallingHeadsController.update(lastComputedBps, getCurrentHeadGlyph());
 }
 
 function flashStoreRow(id) {
