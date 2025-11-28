@@ -713,7 +713,8 @@ let boopPressTimeout = null;
 let boopHoldFinished = false;
 let lastParadeSignature = '';
 let autoBooperClickHandlerAttached = false;
-let fallingHeadAccumulator = 0;
+wlet fallingHeadsController = null;
+let lastComputedBps = 0;
 
 const ui = {
   boopPlayerName: document.getElementById('boop-player-name'),
@@ -1026,6 +1027,7 @@ function initGame() {
   initProfileUI();
   initTitleUI();
   initSettingsUI();
+  initFallingHeadsLayer();
   initShareUI();
   renderFactionOverlay();
   if (!gameState.currentFaction) {
@@ -1168,7 +1170,12 @@ function initSettingsUI() {
   rainInput.addEventListener('change', () => {
     gameState.settings.showBoopRain = rainInput.checked;
     saveGame();
-    updateFallingHeadsVisibility();
+    if (ui.fallingHeadsLayer) {
+      ui.fallingHeadsLayer.style.display = gameState.settings.showBoopRain ? 'block' : 'none';
+    }
+    if (fallingHeadsController) {
+      fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
+    }
   });
 }
 
@@ -1428,6 +1435,11 @@ function getCurrentSkin() {
   return null;
 }
 
+function getCurrentHeadIconUrl() {
+  // Use the main boop art as the fallback icon for particles.
+  return BOOP_IMAGE_DEFAULT_SRC;
+}
+
 function syncAvatarWithSkin() {
   const current = getCurrentSkin();
   if (current?.avatar) {
@@ -1639,7 +1651,9 @@ function updateUI() {
   renderInventory();
   updateOrbitCrew();
   refreshGroundParade();
-  updateFallingHeadsVisibility();
+  if (fallingHeadsController) {
+    fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
+  }
   updatePrestigeUI();
   renderMetaPerks();
   renderFactions();
@@ -2609,7 +2623,10 @@ function gameLoop() {
       addBoops(gain);
     }
   }
-  updateFallingHeads(elapsedSeconds, passiveGainPerSecond);
+  lastComputedBps = passiveGainPerSecond;
+  if (fallingHeadsController) {
+    fallingHeadsController.update(passiveGainPerSecond, getCurrentHeadIconUrl());
+  }
   gameState.lastUpdate = now;
   saveTimer += elapsedSeconds;
 
@@ -2744,64 +2761,87 @@ function spawnFloatingText(text, extraClass) {
   setTimeout(() => popup.remove(), 700);
 }
 
-// Control visibility of the falling-heads layer; leave particles intact when hidden.
-function updateFallingHeadsVisibility() {
+class FallingHeadsLayer {
+  constructor(layer) {
+    this.layer = layer;
+    this.iconUrl = BOOP_IMAGE_DEFAULT_SRC;
+    this.spawnIntervalMs = 500;
+    this.intervalId = null;
+    this.counter = 0;
+  }
+
+  setIcon(url) {
+    // Default to the main idle art if no explicit skin icon is available.
+    this.iconUrl = url || BOOP_IMAGE_DEFAULT_SRC;
+  }
+
+  setSpawnRateFromBps(bps) {
+    // Clamp spawn rate so it never hits zero: 2..20 particles/sec.
+    const safeBps = Math.max(0, Number(bps) || 0);
+    const baseRate = safeBps / 100;
+    const clamped = Math.min(20, Math.max(2, baseRate));
+    const interval = Math.max(25, 1000 / clamped);
+    if (Math.abs(interval - this.spawnIntervalMs) > 1) {
+      this.spawnIntervalMs = interval;
+      this.restart();
+    }
+  }
+
+  start() {
+    this.stop();
+    if (!gameState.settings.showBoopRain || !this.layer) return;
+    this.intervalId = setInterval(() => this.spawn(), this.spawnIntervalMs);
+  }
+
+  stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  restart() {
+    this.start();
+  }
+
+  spawn() {
+    if (!this.layer || !gameState.settings.showBoopRain) return;
+    const particle = document.createElement('img');
+    particle.className = 'falling-head-particle';
+    particle.src = this.iconUrl;
+    particle.alt = 'Falling head';
+    particle.style.left = `${Math.random() * 100}%`;
+    const size = 24 + Math.random() * 8;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
+    const duration = 4 + Math.random() * 4;
+    particle.style.animationDuration = `${duration}s`;
+    particle.addEventListener('animationend', () => particle.remove());
+    this.layer.appendChild(particle);
+  }
+
+  update(bps, iconUrl) {
+    if (!this.layer) return;
+    this.setIcon(iconUrl);
+    if (!gameState.settings.showBoopRain) {
+      this.stop();
+      this.layer.innerHTML = '';
+      return;
+    }
+    this.setSpawnRateFromBps(bps);
+    if (!this.intervalId) {
+      this.start();
+    }
+  }
+}
+
+function initFallingHeadsLayer() {
   const layer = ui.fallingHeadsLayer;
   if (!layer) return;
-  if (gameState.settings.showBoopRain) {
-    layer.style.display = 'block';
-  } else {
-    layer.style.display = 'none';
-    layer.innerHTML = '';
-  }
-}
-
-function getFallingHeadSpawnRatePerSecond(bps) {
-  // Map BPS into a visible-but-clamped spawn rate (1..20 per second).
-  const safeBps = Math.max(0, Number(bps) || 0);
-  if (!gameState.settings.showBoopRain) return 0;
-  const scaled = safeBps / 20;
-  return Math.min(20, Math.max(1, scaled));
-}
-
-function spawnFallingHead() {
-  const layer = ui.fallingHeadsLayer;
-  if (!layer || !gameState.settings.showBoopRain) return;
-  const rect = layer.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-
-  const particle = document.createElement('span');
-  particle.className = 'falling-head';
-  const currentSkin = getCurrentSkin();
-  particle.textContent = currentSkin?.avatar || '🐾';
-  const x = Math.random() * rect.width;
-  particle.style.left = `${x}px`;
-  // Randomize duration (4s–8s) so some heads fall slightly faster/slower.
-  const duration = 4 + Math.random() * 4;
-  particle.style.animationDuration = `${duration}s`;
-  // Randomize size slightly (0.9x–1.2x) for visual variety.
-  const sizeScale = 0.9 + Math.random() * 0.3;
-  particle.style.fontSize = `${Math.round(26 * sizeScale)}px`;
-  layer.appendChild(particle);
-
-  // Cleanup after the animation completes to avoid DOM leaks.
-  setTimeout(() => particle.remove(), duration * 1000 + 250);
-}
-
-function updateFallingHeads(elapsedSeconds, bps) {
-  updateFallingHeadsVisibility();
-  if (!gameState.settings.showBoopRain) return;
-  const ratePerSecond = getFallingHeadSpawnRatePerSecond(bps);
-  if (ratePerSecond <= 0) return;
-
-  fallingHeadAccumulator += ratePerSecond * Math.max(0, elapsedSeconds || 0);
-  let spawned = 0;
-  const maxPerFrame = 15;
-  while (fallingHeadAccumulator >= 1 && spawned < maxPerFrame) {
-    spawnFallingHead();
-    fallingHeadAccumulator -= 1;
-    spawned += 1;
-  }
+  // Create a fresh controller and kick off the spawn loop using the current BPS snapshot.
+  fallingHeadsController = new FallingHeadsLayer(layer);
+  layer.style.display = gameState.settings.showBoopRain ? 'block' : 'none';
+  fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
 }
 
 function flashStoreRow(id) {

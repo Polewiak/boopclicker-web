@@ -185,24 +185,22 @@ textarea {
   justify-content: center;
 }
 
-.falling-head {
+.falling-head-particle {
   position: absolute;
-  top: -10%;
-  font-size: 26px;
-  opacity: 0.95;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
-  animation: falling-head 5s linear forwards;
+  top: 0;
+  will-change: transform;
+  animation-name: fallingHead;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  pointer-events: none;
 }
 
-@keyframes falling-head {
-  /* Start just above the panel and travel beyond the bottom to guarantee full-height coverage. */
+@keyframes fallingHead {
   0% {
     transform: translateY(-10%);
-    opacity: 0.95;
   }
   100% {
     transform: translateY(110%);
-    opacity: 0;
   }
 }
 
