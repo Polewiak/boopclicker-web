@@ -2784,6 +2784,10 @@ class FallingHeadsLayer {
   setSpawnRateFromBps(bps) {
     // Clamp spawn rate so it never hits zero: 2..20 particles/sec.
     const safeBps = Math.max(0, Number(bps) || 0);
+    if (safeBps <= 0) {
+      this.stop();
+      return;
+    }
     const baseRate = safeBps / 100;
     const clamped = Math.min(20, Math.max(2, baseRate));
     const interval = Math.max(25, 1000 / clamped);
@@ -2818,7 +2822,8 @@ class FallingHeadsLayer {
     particle.style.left = `${Math.random() * 100}%`;
     const size = 24 + Math.random() * 8;
     particle.style.fontSize = `${size}px`;
-    const duration = 4 + Math.random() * 4;
+    // Faster fall with light variance so particles traverse the full panel height.
+    const duration = 1.5 + Math.random() * 1.5;
     particle.style.animationDuration = `${duration}s`;
     particle.addEventListener('animationend', () => particle.remove());
     this.layer.appendChild(particle);
@@ -2827,7 +2832,7 @@ class FallingHeadsLayer {
   update(bps, iconGlyph) {
     if (!this.layer) return;
     this.setIcon(iconGlyph);
-    if (!gameState.settings.showBoopRain) {
+    if (!gameState.settings.showBoopRain || bps <= 0) {
       this.stop();
       this.layer.innerHTML = '';
       return;

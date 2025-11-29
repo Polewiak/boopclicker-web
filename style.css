@@ -200,10 +200,10 @@ textarea {
 
 @keyframes fallingHead {
   0% {
-    transform: translateY(-10%);
+    transform: translateY(-64px);
   }
   100% {
-    transform: translateY(110%);
+    transform: translateY(calc(100% + 64px));
   }
 }
 
