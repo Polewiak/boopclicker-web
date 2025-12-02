@@ -2821,11 +2821,28 @@ class FallingHeadsLayer {
     particle.style.left = `${Math.random() * 100}%`;
     const size = 24 + Math.random() * 8;
     particle.style.fontSize = `${size}px`;
-    // Faster fall with light variance so particles traverse the full panel height.
+    // Animate with real pixel distances so particles travel the full height of the panel.
+    const startY = -64; // start slightly above the panel
+    const endY = (this.layer.clientHeight || 0) + 64; // travel past the bottom edge
     const duration = 1.5 + Math.random() * 1.5;
-    particle.style.animationDuration = `${duration}s`;
-    particle.addEventListener('animationend', () => particle.remove());
+    // Set initial transform for immediate placement.
+    particle.style.transform = `translateY(${startY}px)`;
     this.layer.appendChild(particle);
+    // Use Web Animations to ensure the travel distance matches the measured container height.
+    const animation = particle.animate(
+      [
+        { transform: `translateY(${startY}px)` },
+        { transform: `translateY(${endY}px)` },
+      ],
+      {
+        duration: duration * 1000,
+        easing: 'linear',
+        fill: 'forwards',
+      }
+    );
+    animation.addEventListener('finish', () => particle.remove());
+    // Fallback removal in case the animation is interrupted.
+    setTimeout(() => particle.remove(), duration * 1100);
   }
 
   update(bps, iconGlyph) {

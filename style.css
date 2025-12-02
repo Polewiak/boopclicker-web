@@ -123,6 +123,7 @@ textarea {
   top: var(--topbar-height);
   align-self: flex-start;
   min-height: calc(100vh - var(--topbar-height));
+  height: calc(100vh - var(--topbar-height));
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -187,26 +188,11 @@ textarea {
 
 .falling-head-particle {
   position: absolute;
-  /* start slightly above the panel; keyframes will animate the `top` property */
-  top: -64px;
   will-change: transform;
-  animation-name: fallingHead;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
   pointer-events: none;
   color: #fff;
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
   opacity: 0.9;
-}
-
-@keyframes fallingHead {
-  0% {
-    top: -64px;
-  }
-  100% {
-    /* travel past the bottom edge so particles fully traverse the panel */
-    top: calc(100% + 64px);
-  }
 }
 
 #orbit-crew-layer {
