@@ -187,7 +187,8 @@ textarea {
 
 .falling-head-particle {
   position: absolute;
-  top: 0;
+  /* start slightly above the panel; keyframes will animate the `top` property */
+  top: -64px;
   will-change: transform;
   animation-name: fallingHead;
   animation-timing-function: linear;
@@ -200,10 +201,11 @@ textarea {
 
 @keyframes fallingHead {
   0% {
-    transform: translateY(-64px);
+    top: -64px;
   }
   100% {
-    transform: translateY(calc(100% + 64px));
+    /* travel past the bottom edge so particles fully traverse the panel */
+    top: calc(100% + 64px);
   }
 }
 
