@@ -10,6 +10,10 @@ const DEBUG_BOOST_AMOUNT = 10_000_000;
 const BOOP_IMAGE_DEFAULT_SRC = 'assets/Default_Character_Idle.png';
 const BOOP_IMAGE_PRESSED_SRC = 'assets/Default_Character_Booped.png';
 const BOOP_FACE_DURATION_MS = 350;
+const BOOP_SFX_SRC = 'assets/tiny-squeak.mp3';
+const BOOP_MUSIC_SRC = 'assets/BoopTheCozy.mp3';
+const BOOP_RATE_MIN = 0.94;
+const BOOP_RATE_MAX = 1.06;
 const numberFormatter = new Intl.NumberFormat('pl-PL');
 const DAILY_BOX_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 // Layout note: #main-layout (grid under the fixed top bar) now owns the two-column view,
@@ -683,12 +687,13 @@ const gameState = {
   achievementsUnlocked: [],
   unlockedSkins: [],
   boopers: [],
-  skinHighscores: [],
-  settings: {
-    soundEnabled: true,
-    particlesEnabled: true,
-    shortNumbers: true,
-    showOrbitCrew: true,
+    skinHighscores: [],
+    settings: {
+      soundEnabled: true,
+      musicEnabled: true,
+      particlesEnabled: true,
+      shortNumbers: true,
+      showOrbitCrew: true,
     showGroundParade: true,
     showBoopRain: true,
   },
@@ -773,6 +778,7 @@ const ui = {
   shareCopyButton: document.getElementById('share-copy-button'),
   shareStatus: document.getElementById('share-status'),
   settingsSound: document.getElementById('settings-sound'),
+  settingsMusic: document.getElementById('settings-music'),
   settingsParticles: document.getElementById('settings-particles'),
   settingsShortNumbers: document.getElementById('settings-shortnumbers'),
   settingsOrbitCrew: document.getElementById('settings-orbit-crew'),
@@ -786,12 +792,17 @@ const sfx = {
   boop: null,
   crit: null,
   buy: null,
+  music: null,
 };
 
 function playSfx(name) {
   if (!gameState.settings?.soundEnabled) return;
   const audio = sfx[name];
   if (!audio) return;
+  if (name === 'boop') {
+    const rate = BOOP_RATE_MIN + Math.random() * (BOOP_RATE_MAX - BOOP_RATE_MIN);
+    audio.playbackRate = rate;
+  }
   audio.currentTime = 0;
   audio.play().catch(() => {
     // Audio playback can be blocked; ignore for now.
@@ -1046,7 +1057,7 @@ function initGame() {
 
 function initSfx() {
   try {
-    sfx.boop = new Audio('assets/sfx/boop-01.mp3');
+    sfx.boop = new Audio(BOOP_SFX_SRC);
   } catch (error) {
     sfx.boop = null;
   }
@@ -1055,6 +1066,28 @@ function initSfx() {
   }
   sfx.crit = document.getElementById('sfx-crit');
   sfx.buy = document.getElementById('sfx-prestige');
+  sfx.music = document.getElementById('sfx-music');
+  if (sfx.music) {
+    sfx.music.loop = true;
+  }
+}
+
+function startSoundtrack() {
+  if (!gameState.settings?.soundEnabled || !gameState.settings?.musicEnabled) return;
+  if (!sfx.music) return;
+  if (!sfx.music.loop) sfx.music.loop = true;
+  if (sfx.music.paused) {
+    sfx.music.currentTime = Math.min(sfx.music.currentTime || 0, sfx.music.duration || 0);
+    sfx.music.play().catch(() => {
+      // Autoplay might be blocked; ignore.
+    });
+  }
+}
+
+function stopSoundtrack() {
+  if (!sfx.music) return;
+  sfx.music.pause();
+  sfx.music.currentTime = 0;
 }
 
 function attachHandlers() {
@@ -1135,9 +1168,11 @@ function initSettingsUI() {
   const orbitInput = ui.settingsOrbitCrew;
   const paradeInput = ui.settingsGroundParade;
   const rainInput = ui.settingsBoopRain;
-  if (!soundInput || !particlesInput || !shortNumbersInput || !orbitInput || !paradeInput || !rainInput) return;
+  const musicInput = ui.settingsMusic;
+  if (!soundInput || !musicInput || !particlesInput || !shortNumbersInput || !orbitInput || !paradeInput || !rainInput) return;
 
   soundInput.checked = !!gameState.settings.soundEnabled;
+  musicInput.checked = !!gameState.settings.musicEnabled;
   particlesInput.checked = !!gameState.settings.particlesEnabled;
   shortNumbersInput.checked = !!gameState.settings.shortNumbers;
   orbitInput.checked = !!gameState.settings.showOrbitCrew;
@@ -1147,6 +1182,18 @@ function initSettingsUI() {
   soundInput.addEventListener('change', () => {
     gameState.settings.soundEnabled = soundInput.checked;
     saveGame();
+    if (!gameState.settings.soundEnabled) {
+      stopSoundtrack();
+    }
+  });
+  musicInput.addEventListener('change', () => {
+    gameState.settings.musicEnabled = musicInput.checked;
+    saveGame();
+    if (gameState.settings.musicEnabled) {
+      startSoundtrack();
+    } else {
+      stopSoundtrack();
+    }
   });
   particlesInput.addEventListener('change', () => {
     gameState.settings.particlesEnabled = particlesInput.checked;
@@ -1238,6 +1285,7 @@ function loadGame() {
     gameState.skinHighscores = Array.isArray(data.skinHighscores) ? data.skinHighscores : [];
     gameState.settings = {
       soundEnabled: true,
+      musicEnabled: true,
       particlesEnabled: true,
       shortNumbers: true,
       showOrbitCrew: true,
@@ -2713,6 +2761,7 @@ function handleBoopPress(event) {
     }
   }, BOOP_FACE_DURATION_MS);
 
+  startSoundtrack();
   playSfx('boop');
   doBoop();
 }
