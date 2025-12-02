@@ -1174,7 +1174,7 @@ function initSettingsUI() {
       ui.fallingHeadsLayer.style.display = gameState.settings.showBoopRain ? 'block' : 'none';
     }
     if (fallingHeadsController) {
-    fallingHeadsController.update(lastComputedBps, getCurrentHeadGlyph());
+      fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
     }
   });
 }
@@ -1658,7 +1658,7 @@ function updateUI() {
   updateOrbitCrew();
   refreshGroundParade();
   if (fallingHeadsController) {
-    fallingHeadsController.update(lastComputedBps, getCurrentHeadGlyph());
+    fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
   }
   updatePrestigeUI();
   renderMetaPerks();
@@ -2631,7 +2631,7 @@ function gameLoop() {
   }
   lastComputedBps = passiveGainPerSecond;
   if (fallingHeadsController) {
-    fallingHeadsController.update(passiveGainPerSecond, getCurrentHeadGlyph());
+    fallingHeadsController.update(passiveGainPerSecond, getCurrentHeadIconUrl());
   }
   gameState.lastUpdate = now;
   saveTimer += elapsedSeconds;
@@ -2770,26 +2770,27 @@ function spawnFloatingText(text, extraClass) {
 class FallingHeadsLayer {
   constructor(layer) {
     this.layer = layer;
-    this.iconGlyph = '🐾';
+    this.iconSrc = BOOP_IMAGE_DEFAULT_SRC;
     this.spawnIntervalMs = 500;
     this.intervalId = null;
     this.counter = 0;
   }
 
-  setIcon(glyph) {
-    // Default to a paw emoji when no explicit skin avatar is available.
-    this.iconGlyph = glyph || '🐾';
+  setIcon(iconUrl) {
+    // Default to the core boop art when no explicit skin asset is supplied.
+    this.iconSrc = iconUrl || BOOP_IMAGE_DEFAULT_SRC;
   }
 
   setSpawnRateFromBps(bps) {
-    // Spawn one particle per boop produced each second by auto-boopers.
+    // Spawn at 10–20% of the raw BPS so the effect is calmer at high production.
     const safeBps = Math.max(0, Number(bps) || 0);
-    if (safeBps <= 0) {
+    const scaledBps = safeBps * 0.15; // roughly 15% of actual BPS
+    if (scaledBps <= 0) {
       this.stop();
       return;
     }
-    // Interval derived directly from BPS; no lower bound so high BPS can visibly flood the lane.
-    const interval = 1000 / safeBps;
+    // Interval derived from the scaled rate; high BPS still speeds up the rain but remains readable.
+    const interval = 1000 / scaledBps;
     if (Math.abs(interval - this.spawnIntervalMs) > 1) {
       this.spawnIntervalMs = interval;
       this.restart();
@@ -2815,12 +2816,14 @@ class FallingHeadsLayer {
 
   spawn() {
     if (!this.layer || !gameState.settings.showBoopRain) return;
-    const particle = document.createElement('div');
+    const particle = document.createElement('img');
     particle.className = 'falling-head-particle';
-    particle.textContent = this.iconGlyph;
+    particle.src = this.iconSrc;
+    particle.alt = 'Boop head';
     particle.style.left = `${Math.random() * 100}%`;
     const size = 24 + Math.random() * 8;
-    particle.style.fontSize = `${size}px`;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
     // Animate with real pixel distances so particles travel the full height of the panel.
     const startY = -64; // start slightly above the panel
     const endY = (this.layer.clientHeight || 0) + 64; // travel past the bottom edge
@@ -2845,9 +2848,9 @@ class FallingHeadsLayer {
     setTimeout(() => particle.remove(), duration * 1100);
   }
 
-  update(bps, iconGlyph) {
+  update(bps, iconUrl) {
     if (!this.layer) return;
-    this.setIcon(iconGlyph);
+    this.setIcon(iconUrl);
     if (!gameState.settings.showBoopRain || bps <= 0) {
       this.stop();
       this.layer.innerHTML = '';
@@ -2866,7 +2869,7 @@ function initFallingHeadsLayer() {
   // Create a fresh controller and kick off the spawn loop using the current BPS snapshot.
   fallingHeadsController = new FallingHeadsLayer(layer);
   layer.style.display = gameState.settings.showBoopRain ? 'block' : 'none';
-  fallingHeadsController.update(lastComputedBps, getCurrentHeadGlyph());
+  fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
 }
 
 function flashStoreRow(id) {
