@@ -2782,15 +2782,14 @@ class FallingHeadsLayer {
   }
 
   setSpawnRateFromBps(bps) {
-    // Clamp spawn rate so it never hits zero: 2..20 particles/sec.
+    // Spawn one particle per boop produced each second by auto-boopers.
     const safeBps = Math.max(0, Number(bps) || 0);
     if (safeBps <= 0) {
       this.stop();
       return;
     }
-    const baseRate = safeBps / 100;
-    const clamped = Math.min(20, Math.max(2, baseRate));
-    const interval = Math.max(25, 1000 / clamped);
+    // Interval derived directly from BPS; no lower bound so high BPS can visibly flood the lane.
+    const interval = 1000 / safeBps;
     if (Math.abs(interval - this.spawnIntervalMs) > 1) {
       this.spawnIntervalMs = interval;
       this.restart();
