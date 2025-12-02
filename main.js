@@ -2827,8 +2827,8 @@ class FallingHeadsLayer {
     // Animate with real pixel distances so particles travel the full height of the panel.
     const startY = -64; // start slightly above the panel
     const endY = (this.layer.clientHeight || 0) + 64; // travel past the bottom edge
-    // Slow the fall by roughly 50% compared to the previous timing to keep particles readable.
-    const duration = 3 + Math.random() * 3; // 3–6s travel time
+    // Slow the fall further (~50% longer than before) to make particles linger.
+    const duration = 4.5 + Math.random() * 4.5; // 4.5–9s travel time
     // Set initial transform for immediate placement.
     particle.style.transform = `translateY(${startY}px)`;
     this.layer.appendChild(particle);
