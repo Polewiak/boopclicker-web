@@ -733,6 +733,7 @@ const ui = {
   boopPanel: document.getElementById('boop-panel'),
   boopArea: document.getElementById('boop-area'),
   boopButton: document.getElementById('boop-button'),
+  boopImageWrapper: document.getElementById('boop-image-wrapper'),
   orbitCrewLayer: document.getElementById('orbit-crew-layer'),
   groundParadeLayer: document.getElementById('ground-parade-layer'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
@@ -2758,6 +2759,22 @@ function showCritPopup(value) {
   void ui.critPopup.offsetWidth;
   ui.critPopup.classList.add('show');
   spawnFloatingText(`CRITICAL BOOP! +${gainText}`, 'crit-floating');
+  triggerCritReaction();
+}
+
+function triggerCritReaction() {
+  const target = ui.boopImageWrapper;
+  if (!target) return;
+  target.classList.remove('crit-reaction');
+  void target.offsetWidth;
+  target.classList.add('crit-reaction');
+  target.addEventListener(
+    'animationend',
+    () => {
+      target.classList.remove('crit-reaction');
+    },
+    { once: true }
+  );
 }
 
 function setBoopFace(src) {
@@ -2836,10 +2853,10 @@ function spawnFloatingText(text, extraClass) {
   popup.style.top = `${randY}px`;
   document.body.appendChild(popup);
   requestAnimationFrame(() => {
-    popup.style.transform = 'translateY(-40px)';
+    popup.style.transform = 'translateY(-90px)';
     popup.style.opacity = '0';
   });
-  setTimeout(() => popup.remove(), 700);
+  setTimeout(() => popup.remove(), 1400);
 }
 
 class FallingHeadsLayer {

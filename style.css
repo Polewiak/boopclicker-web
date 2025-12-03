@@ -240,6 +240,22 @@ textarea {
   z-index: 2;
 }
 
+#boop-image-wrapper.crit-reaction {
+  animation: critReaction 0.5s ease-out;
+}
+
+@keyframes critReaction {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 #ground-parade-layer {
   position: absolute;
   left: 0;
@@ -338,16 +354,16 @@ textarea {
   top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 32px;
-  color: #ffe066;
-  font-weight: 800;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  font-size: 42px;
+  color: #ffc107;
+  font-weight: 900;
+  text-shadow: 2px 2px 0px #3e2723, 0 0 14px rgba(0, 0, 0, 0.7);
   pointer-events: none;
   opacity: 0;
 }
 
 #crit-popup.show {
-  animation: crit-float 0.6s ease-out forwards;
+  animation: crit-float 2.5s ease-out forwards;
 }
 
 @keyframes crit-float {
@@ -357,7 +373,7 @@ textarea {
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -90px);
+    transform: translate(-50%, -160px);
   }
 }
 
@@ -542,18 +558,20 @@ textarea {
 .floating-text {
   position: fixed;
   pointer-events: none;
-  color: #fff;
-  font-size: 14px;
-  font-weight: bold;
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  color: #fffdd0;
+  font-size: 26px;
+  font-weight: 800;
+  text-shadow: 2px 2px 0px #3e2723, 0 0 10px rgba(0, 0, 0, 0.55);
   opacity: 1;
   transform: translateY(0);
-  transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+  transition: transform 0.9s ease-out, opacity 0.9s ease-out;
   z-index: 200;
 }
 
 .floating-text.crit-floating {
-  color: #ffcc44;
+  color: #ffc107;
+  font-size: 36px;
+  text-shadow: 3px 3px 0px #3e2723, 0 0 14px rgba(0, 0, 0, 0.6);
 }
 
 .upgrade-card {
