@@ -2015,6 +2015,9 @@ function renderAutoBoopers() {
     card.dataset.id = auto.id;
     card.dataset.index = String(index);
 
+    const leftWrap = document.createElement('div');
+    leftWrap.className = 'auto-booper-left';
+
     const icon = document.createElement('div');
     icon.className = 'auto-booper-icon';
     icon.textContent = auto.icon || '🏭';
@@ -2028,13 +2031,18 @@ function renderAutoBoopers() {
 
     const metaEl = document.createElement('div');
     metaEl.className = 'auto-booper-meta';
-    metaEl.textContent = `Owned: ${formatNumber(auto.owned || 0)}`;
-
-    infoWrap.append(nameEl, metaEl);
+    metaEl.textContent = `+${formatNumber(auto.baseBps)} BPS each`;
 
     const costEl = document.createElement('div');
     costEl.className = 'auto-booper-cost';
     costEl.textContent = `${formatNumber(currentCost)} boops`;
+
+    infoWrap.append(nameEl, metaEl, costEl);
+    leftWrap.append(icon, infoWrap);
+
+    const countEl = document.createElement('div');
+    countEl.className = 'auto-booper-count';
+    countEl.textContent = `x${formatNumber(auto.owned || 0)}`;
 
     const showAutoTooltip = (event) => {
       const tooltip = ui.autoBooperTooltip;
@@ -2051,7 +2059,7 @@ function renderAutoBoopers() {
     card.addEventListener('mousemove', (event) => showAutoTooltip(event));
     card.addEventListener('mouseleave', hideUpgradeTooltips);
 
-    card.append(icon, infoWrap, costEl);
+    card.append(leftWrap, countEl);
     fragment.appendChild(card);
   });
 
@@ -2064,6 +2072,9 @@ function renderAutoBoopers() {
     card.id = `${auto.id}-autocard`;
     card.dataset.id = auto.id;
     card.dataset.index = String(index);
+
+    const leftWrap = document.createElement('div');
+    leftWrap.className = 'auto-booper-left';
 
     const icon = document.createElement('div');
     icon.className = 'auto-booper-icon';
@@ -2086,12 +2097,13 @@ function renderAutoBoopers() {
     }
 
     infoWrap.append(nameEl, metaEl);
+    leftWrap.append(icon, infoWrap);
 
-    const costEl = document.createElement('div');
-    costEl.className = 'auto-booper-cost';
-    costEl.textContent = '???';
+    const countEl = document.createElement('div');
+    countEl.className = 'auto-booper-count';
+    countEl.textContent = 'x—';
 
-    card.append(icon, infoWrap, costEl);
+    card.append(leftWrap, countEl);
     fragment.appendChild(card);
   });
 

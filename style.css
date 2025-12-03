@@ -10,6 +10,8 @@ html,
 body {
   height: auto;
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
 }
 
 body {
@@ -499,7 +501,7 @@ textarea {
 .auto-booper-card.available {
   opacity: 1;
   background-color: rgba(110, 80, 70, 0.8);
-  box-shadow: 0 0 10px rgba(255, 200, 100, 0.3);
+  box-shadow: inset 0 0 0 2px rgba(255, 200, 100, 0.3);
 }
 
 .auto-booper-card.unavailable {
@@ -523,6 +525,13 @@ textarea {
   text-align: center;
 }
 
+.auto-booper-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
 .auto-booper-name {
   font-weight: bold;
   text-align: left;
@@ -539,20 +548,26 @@ textarea {
 .auto-booper-meta {
   opacity: 0.85;
   color: #eab865;
-  font-weight: 800;
-  text-align: right;
-  align-self: flex-end;
+  font-weight: 700;
 }
 
 .auto-booper-cost {
-  flex: 0 0 auto;
   font-size: 12px;
   opacity: 0.9;
+  color: #fffdd0;
+}
+
+.auto-booper-count {
+  flex: 0 0 auto;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffc107;
   text-align: right;
+  min-width: 64px;
 }
 
 .auto-booper-card.available:hover {
-  box-shadow: 0 0 8px rgba(255, 200, 100, 0.4);
+  box-shadow: inset 0 0 0 2px rgba(255, 200, 100, 0.45);
 }
 
 .floating-text {
