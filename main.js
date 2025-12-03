@@ -10,7 +10,12 @@ const DEBUG_BOOST_AMOUNT = 10_000_000;
 const BOOP_IMAGE_DEFAULT_SRC = 'assets/Default_Character_Idle.png';
 const BOOP_IMAGE_PRESSED_SRC = 'assets/Default_Character_Booped.png';
 const BOOP_FACE_DURATION_MS = 350;
-const BOOP_SFX_SRC = 'assets/tiny-squeak.mp3';
+const BOOP_SFX_SOURCES = [
+  'assets/tiny-squeak.mp3',
+  'assets/tiny-squeak2.mp3',
+  'assets/tiny-squeak3.mp3',
+];
+const BOOP_SFX_VOLUME = 0.7;
 const BOOP_MUSIC_SRC = 'assets/BoopTheCozy.mp3';
 const BOOP_RATE_MIN = 0.94;
 const BOOP_RATE_MAX = 1.06;
@@ -797,12 +802,21 @@ const sfx = {
 
 function playSfx(name) {
   if (!gameState.settings?.soundEnabled) return;
-  const audio = sfx[name];
+  const entry = sfx[name];
+  if (!entry) return;
+
+  const audio = Array.isArray(entry)
+    ? entry[Math.floor(Math.random() * entry.length)]
+    : entry;
+
   if (!audio) return;
+
   if (name === 'boop') {
     const rate = BOOP_RATE_MIN + Math.random() * (BOOP_RATE_MAX - BOOP_RATE_MIN);
     audio.playbackRate = rate;
+    audio.volume = BOOP_SFX_VOLUME;
   }
+
   audio.currentTime = 0;
   audio.play().catch(() => {
     // Audio playback can be blocked; ignore for now.
@@ -1056,14 +1070,26 @@ function initGame() {
 }
 
 function initSfx() {
-  try {
-    sfx.boop = new Audio(BOOP_SFX_SRC);
-  } catch (error) {
-    sfx.boop = null;
+  const boopCandidates = BOOP_SFX_SOURCES.map((src) => {
+    try {
+      const audio = new Audio(src);
+      audio.volume = BOOP_SFX_VOLUME; // soften boop clicks by ~30%
+      return audio;
+    } catch (error) {
+      return null;
+    }
+  }).filter(Boolean);
+
+  if (boopCandidates.length) {
+    sfx.boop = boopCandidates;
+  } else {
+    const fallback = document.getElementById('sfx-boop');
+    if (fallback) {
+      fallback.volume = BOOP_SFX_VOLUME;
+      sfx.boop = [fallback];
+    }
   }
-  if (!sfx.boop) {
-    sfx.boop = document.getElementById('sfx-boop');
-  }
+
   sfx.crit = document.getElementById('sfx-crit');
   sfx.buy = document.getElementById('sfx-prestige');
   sfx.music = document.getElementById('sfx-music');
