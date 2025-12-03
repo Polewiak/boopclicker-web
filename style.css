@@ -128,7 +128,8 @@ textarea {
   flex-direction: column;
   justify-content: center;
   padding: 16px;
-  background-image: url('/assets/CozyPastelRoom_Background.png');
+  /* Use relative path so the cozy backdrop loads on GitHub Pages and local dev. */
+  background-image: url('./assets/CozyPastelRoom_Background.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
