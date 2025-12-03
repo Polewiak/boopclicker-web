@@ -185,6 +185,7 @@ textarea {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  background: none;
 }
 
 .falling-head-particle {
@@ -228,10 +229,10 @@ textarea {
 #boop-image-wrapper {
   width: 100%;
   max-width: 320px;
-  border: none;
+  border: none !important;
   border-radius: 0;
-  background-color: transparent;
-  box-shadow: none;
+  background: none !important;
+  box-shadow: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
