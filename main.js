@@ -1020,12 +1020,6 @@ function initGame() {
   initSettingsUI();
   initFallingHeadsLayer();
   initShareUI();
-  renderFactionOverlay();
-  if (!gameState.currentFaction) {
-    showFactionOverlay();
-  } else {
-    hideFactionOverlay();
-  }
   attachHandlers();
   markStoreDirty();
   updateUI();
