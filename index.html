@@ -56,12 +56,7 @@
           </div>
           <div id="ground-parade-layer" aria-hidden="true"></div>
         </div>
-        <img
-          id="backpack-icon"
-          src="assets/backpack_icon.png"
-          alt="Open inventory"
-          aria-label="Open inventory"
-        />
+        <div id="backpack-trigger" aria-label="Open inventory" role="button">🎒</div>
       </section>
 
       <section id="shop-panel" aria-label="Sklep z upgrade'ami">
@@ -74,7 +69,7 @@
           </button>
         </div>
 
-        <div id="tab-production" class="tab-content active" role="tabpanel">
+        <div id="tab-production" class="tab-content active" role="tabpanel" style="display: block">
           <section id="click-upgrades-section" aria-label="Click upgrades">
             <h2>Click Upgrades</h2>
             <div id="click-upgrades-grid"></div>
@@ -88,20 +83,19 @@
           </section>
         </div>
 
-        <div id="tab-coziness" class="tab-content" role="tabpanel" aria-hidden="true">
+        <div id="tab-coziness" class="tab-content" role="tabpanel" aria-hidden="true" style="display: none">
+          <section id="skins-shop" aria-label="Skins Shop">
+            <h2>Skins Shop</h2>
+            <div id="skins-grid"></div>
+            <div id="unlock-with-code">
+              <h3>Unlock custom skin</h3>
+              <input type="text" id="skin-code-input" placeholder="Enter code" aria-label="Skin unlock code" />
+              <button id="skin-code-button" type="button">Unlock</button>
+              <p id="skin-code-message" aria-live="polite"></p>
+            </div>
+          </section>
           <p class="placeholder">Coming Soon</p>
         </div>
-
-        <section id="skins-shop" aria-label="Skins Shop">
-          <h2>Skins Shop</h2>
-          <div id="skins-grid"></div>
-          <div id="unlock-with-code">
-            <h3>Unlock custom skin</h3>
-            <input type="text" id="skin-code-input" placeholder="Enter code" aria-label="Skin unlock code" />
-            <button id="skin-code-button" type="button">Unlock</button>
-            <p id="skin-code-message" aria-live="polite"></p>
-          </div>
-        </section>
       </section>
     </div>
 

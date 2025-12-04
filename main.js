@@ -709,7 +709,7 @@ const ui = {
   orbitCrewLayer: document.getElementById('orbit-crew-layer'),
   groundParadeLayer: document.getElementById('ground-parade-layer'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
-  backpackIcon: document.getElementById('backpack-icon'),
+  backpackTrigger: document.getElementById('backpack-trigger'),
   inventoryGrid: document.getElementById('inventory-grid'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
@@ -931,6 +931,8 @@ function initShopTabs() {
     cozBtn.classList.toggle('active', !showProduction);
     prodTab.classList.toggle('active', showProduction);
     cozTab.classList.toggle('active', !showProduction);
+    prodTab.style.display = showProduction ? 'block' : 'none';
+    cozTab.style.display = showProduction ? 'none' : 'block';
     prodTab.setAttribute('aria-hidden', showProduction ? 'false' : 'true');
     cozTab.setAttribute('aria-hidden', showProduction ? 'true' : 'false');
     prodBtn.setAttribute('aria-selected', showProduction ? 'true' : 'false');
@@ -943,20 +945,28 @@ function initShopTabs() {
 }
 
 function initInventoryModal() {
-  const icon = ui.backpackIcon;
+  const icon = ui.backpackTrigger;
   const modal = document.getElementById('inventory-modal');
   const closeBtn = document.getElementById('inventory-close');
   if (!icon || !modal || !closeBtn) return;
 
   const open = () => {
+    modal.style.display = 'flex';
     modal.classList.add('open');
   };
 
   const close = () => {
     modal.classList.remove('open');
+    modal.style.display = 'none';
   };
 
-  icon.addEventListener('click', open);
+  icon.addEventListener('click', () => {
+    if (modal.classList.contains('open')) {
+      close();
+    } else {
+      open();
+    }
+  });
   closeBtn.addEventListener('click', close);
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
