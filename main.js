@@ -945,32 +945,45 @@ function initShopTabs() {
 }
 
 function initInventoryModal() {
-  const icon = ui.backpackTrigger;
-  const modal = document.getElementById('inventory-modal');
+  const backpackTrigger = document.getElementById('backpack-trigger');
+  const inventoryModal = document.getElementById('inventory-modal');
   const closeBtn = document.getElementById('inventory-close');
-  if (!icon || !modal || !closeBtn) return;
 
-  const open = () => {
-    modal.style.display = 'flex';
-    modal.classList.add('open');
+  if (!backpackTrigger || !inventoryModal) {
+    console.error('CRITICAL: Backpack trigger or Modal not found in HTML');
+    return;
+  }
+
+  console.log('Backpack elements found!');
+
+  const openModal = () => {
+    inventoryModal.classList.remove('hidden');
+    inventoryModal.style.display = 'flex';
+    inventoryModal.classList.add('open');
   };
 
-  const close = () => {
-    modal.classList.remove('open');
-    modal.style.display = 'none';
+  const closeModalSafe = () => {
+    inventoryModal.classList.remove('open');
+    inventoryModal.classList.add('hidden');
+    inventoryModal.style.display = 'none';
   };
 
-  icon.addEventListener('click', () => {
-    if (modal.classList.contains('open')) {
-      close();
+  backpackTrigger.addEventListener('click', () => {
+    console.log('Backpack clicked!');
+    if (inventoryModal.style.display === 'none' || inventoryModal.style.display === '') {
+      openModal();
     } else {
-      open();
+      closeModalSafe();
     }
   });
-  closeBtn.addEventListener('click', close);
-  modal.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      close();
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeModalSafe);
+  }
+
+  inventoryModal.addEventListener('click', (event) => {
+    if (event.target === inventoryModal) {
+      closeModalSafe();
     }
   });
 }
@@ -2999,7 +3012,11 @@ function resetProgressForPrestige() {
   // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
 }
 
-initGame();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGame);
+} else {
+  initGame();
+}
 
 // TODO: Rozbudować meta tree o kolejne gałęzie i synergy boosty.
 // TODO: Dodać kolejne meta-perki (np. prestiżowe auto-rituały).
