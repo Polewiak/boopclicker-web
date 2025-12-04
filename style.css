@@ -930,58 +930,6 @@ textarea {
   opacity: 1;
 }
 
-#faction-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-}
-
-#faction-overlay.hidden {
-  display: none;
-}
-
-#faction-overlay-inner {
-  background: #181818;
-  padding: 24px;
-  border-radius: 12px;
-  max-width: 600px;
-  width: 90%;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
-  text-align: center;
-}
-
-#faction-overlay-choices {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-@media (min-width: 800px) {
-  #faction-overlay-choices {
-    flex-direction: row;
-  }
-}
-
-.faction-overlay-button {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  background: #242424;
-  border: 1px solid #444;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.faction-overlay-button:hover {
-  background: #2f2f2f;
-}
 
 .footnote {
   text-align: center;

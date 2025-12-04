@@ -550,30 +550,6 @@ const metaPerksConfig = [
   },
 ];
 
-const factionConfig = [
-  {
-    id: 'fox',
-    name: 'Fox Clan',
-    description: '+2% Critical Chance.',
-    bonusType: 'crit',
-    bonusValue: 0.02,
-  },
-  {
-    id: 'wolf',
-    name: 'Wolf Pack',
-    description: '+2% BPS.',
-    bonusType: 'bps',
-    bonusValue: 0.02,
-  },
-  {
-    id: 'dragon',
-    name: 'Dragon Brood',
-    description: '+2% BPC.',
-    bonusType: 'bpc',
-    bonusValue: 0.02,
-  },
-];
-
 const skinsConfig = [
   {
     id: 'player1',
@@ -679,9 +655,6 @@ const gameState = {
   playerAvatar: '🧸',
   playerTitleId: 'none',
   unlockedTitleIds: ['none', 'cert_booper'],
-  factions: factionConfig.map((faction) => ({ ...faction })),
-  currentFaction: null,
-  factionBonus: { crit: 0, bps: 0, bpc: 0 },
   boopEssence: 0,
   globalMultiplier: 1,
   bpcMultiplier: 1,
@@ -717,7 +690,6 @@ let offlineNoticeTimeout = null;
 let passiveGainRemainder = 0;
 let storeNeedsRender = true;
 let lastUnlockedClickCount = 0;
-let factionOverlayRendered = false;
 let boopHoldActive = false;
 let boopPressTimeout = null;
 let boopHoldFinished = false;
@@ -758,8 +730,6 @@ const ui = {
   skinCodeMessage: document.getElementById('skin-code-message'),
   topBoopersList: document.getElementById('top-boopers-list'),
   topSkinsList: document.getElementById('top-skins-list'),
-  factionCurrent: document.getElementById('faction-current'),
-  factionChoiceContainer: document.getElementById('faction-choice-container'),
   prestigeTotalBoops: document.getElementById('total-boops-value'),
   boopEssence: document.getElementById('boop-essence-value'),
   prestigeGain: document.getElementById('prestige-gain-value'),
@@ -778,8 +748,6 @@ const ui = {
   achievementToast: document.getElementById('achievement-toast'),
   debugAddBoopsButton: document.getElementById('debug-add-boops'),
   debugResetButton: document.getElementById('debug-reset'),
-  factionOverlay: document.getElementById('faction-overlay'),
-  factionOverlayChoices: document.getElementById('faction-overlay-choices'),
   shareText: document.getElementById('share-text'),
   shareCopyButton: document.getElementById('share-copy-button'),
   shareStatus: document.getElementById('share-status'),
@@ -1026,9 +994,6 @@ function openModal(targetId) {
   }
   if (targetId === 'meta-perks-section') {
     renderMetaPerks();
-  }
-  if (targetId === 'faction-section') {
-    renderFactions();
   }
   if (targetId === 'highscores-section') {
     renderHighscores();
@@ -1345,18 +1310,6 @@ function loadGame() {
         0
       );
     }
-    const savedFactionId = typeof data.currentFaction === 'string' ? data.currentFaction : null;
-    const factionExists = savedFactionId
-      ? gameState.factions.some((faction) => faction.id === savedFactionId)
-      : false;
-    applyFactionBonusById(savedFactionId);
-    if ((!savedFactionId || !factionExists) && typeof data.factionBonus === 'object') {
-      gameState.factionBonus = {
-        crit: Number(data.factionBonus.crit) || 0,
-        bps: Number(data.factionBonus.bps) || 0,
-        bpc: Number(data.factionBonus.bpc) || 0,
-      };
-    }
     gameState.dailyBoxLastOpened = data.dailyBoxLastOpened || null;
     gameState.dailyBoxAvailable = data.dailyBoxAvailable ?? true;
   } catch (error) {
@@ -1395,8 +1348,6 @@ function saveGame() {
     unlockedSkins: gameState.unlockedSkins,
     boopers: gameState.boopers,
     skinHighscores: gameState.skinHighscores,
-    currentFaction: gameState.currentFaction,
-    factionBonus: gameState.factionBonus,
     boopEssence: gameState.boopEssence,
     globalMultiplier: gameState.globalMultiplier,
     bpcMultiplier: gameState.bpcMultiplier,
@@ -1647,37 +1598,19 @@ function applyAchievementReward(achievement) {
   }
 }
 
-function applyFactionBonusById(factionId) {
-  const faction = gameState.factions.find((item) => item.id === factionId) || null;
-  gameState.currentFaction = faction ? faction.id : null;
-  gameState.factionBonus = { crit: 0, bps: 0, bpc: 0 };
-  if (faction) {
-    gameState.factionBonus[faction.bonusType] = faction.bonusValue;
-  }
-}
-
-function chooseFaction(id) {
-  applyFactionBonusById(id);
-  saveGame();
-  updateUI();
-  hideFactionOverlay();
-}
-
 function getFinalBpc() {
   const base = Math.max(0, (gameState.bpcBase ?? BASE_BPC) + (gameState.bpcFlatBonus || 0));
-  const factionBonus = 1 + (gameState.factionBonus?.bpc || 0);
-  const raw = base * gameState.bpcMultiplier * gameState.globalMultiplier * factionBonus;
+  const raw = base * gameState.bpcMultiplier * gameState.globalMultiplier;
   return Math.max(1, Math.floor(raw));
 }
 
 function getFinalBps() {
   const base = gameState.bpsBase ?? gameState.bps ?? 0;
-  const factionBonus = 1 + (gameState.factionBonus?.bps || 0);
-  return base * gameState.bpsMultiplier * gameState.globalMultiplier * factionBonus;
+  return base * gameState.bpsMultiplier * gameState.globalMultiplier;
 }
 
 function getEffectiveCritChance() {
-  return Math.min(0.95, Math.max(0, gameState.critChance + gameState.factionBonus.crit));
+  return Math.min(0.95, Math.max(0, gameState.critChance));
 }
 
 function applyOfflineProgress() {
@@ -1701,12 +1634,6 @@ function updateUI() {
   const formattedBoops = formatNumber(Math.floor(Number(gameState.boops) || 0));
   const formattedTotal = formatNumber(Math.floor(Number(gameState.totalBoops) || 0));
   const formattedBps = formatNumber(Math.round(finalBps * 100) / 100);
-
-  if (!gameState.currentFaction) {
-    showFactionOverlay();
-  } else {
-    hideFactionOverlay();
-  }
 
   if (ui.boopPlayerName) {
     ui.boopPlayerName.textContent = gameState.playerName || 'Anonymous';
@@ -1737,7 +1664,6 @@ function updateUI() {
   }
   updatePrestigeUI();
   renderMetaPerks();
-  renderFactions();
   updateStatsUI();
   updateAchievementsUI();
 }
@@ -2229,24 +2155,6 @@ function renderMetaPerks() {
   container.appendChild(fragment);
 }
 
-function renderFactions() {
-  const currentEl = ui.factionCurrent;
-  const container = ui.factionChoiceContainer;
-  if (!currentEl) return;
-
-  const activeFaction = gameState.factions.find((item) => item.id === gameState.currentFaction);
-  currentEl.textContent = activeFaction
-    ? `${activeFaction.name} — ${activeFaction.description}`
-    : 'Brak wybranego totemu.';
-
-  if (container) {
-    container.innerHTML = '';
-    const note = document.createElement('p');
-    note.textContent = 'You can change your faction after the next Prestige.';
-    container.appendChild(note);
-  }
-}
-
 function updateProfileUI() {
   if (ui.profileName) {
     ui.profileName.textContent = gameState.playerName || 'Anonymous';
@@ -2388,11 +2296,7 @@ function updateShareText() {
   const currentSkin = getCurrentSkin();
   const skinName = currentSkin ? currentSkin.name : 'no skin';
   const skinBoops = currentSkin ? formatNumber(currentSkin.boops || 0) : 0;
-  const factionId = gameState.currentFaction;
-  const faction = gameState.factions?.find((f) => f.id === factionId);
-  const factionName = faction ? faction.name : 'No faction';
-
-  const text = `${avatar} ${player} has booped ${total} times in Boopclicker!\nCurrent skin: ${skinName} (${skinBoops} boops)\nFaction: ${factionName}`;
+  const text = `${avatar} ${player} has booped ${total} times in Boopclicker!\nCurrent skin: ${skinName} (${skinBoops} boops)`;
   shareTextEl.value = text;
 }
 
@@ -2692,8 +2596,6 @@ function hardResetGame() {
   gameState.totalPrestiges = 0;
   gameState.totalAutoBoopers = 0;
   gameState.bpcFlatBonus = 0;
-  gameState.currentFaction = null;
-  gameState.factionBonus = { crit: 0, bps: 0, bpc: 0 };
   passiveGainRemainder = 0;
   saveTimer = 0;
   gameState.lastUpdate = Date.now();
@@ -3034,53 +2936,14 @@ function resetProgressForPrestige() {
   gameState.bpcUpgrades = bpcUpgradesConfig.map((upgrade) => ({ ...upgrade }));
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.lastUpdate = Date.now();
-  applyFactionBonusById(null);
-  showFactionOverlay();
-  renderFactionOverlay();
   markStoreDirty();
   // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
-}
-
-function renderFactionOverlay() {
-  const overlay = ui.factionOverlay;
-  const container = ui.factionOverlayChoices;
-  if (!overlay || !container) return;
-
-  container.innerHTML = '';
-
-  gameState.factions.forEach((faction) => {
-    const button = document.createElement('button');
-    button.className = 'faction-overlay-button';
-    button.innerHTML = `<strong>${faction.name}</strong><span>${faction.description}</span>`;
-    button.addEventListener('click', () => {
-      chooseFaction(faction.id);
-      hideFactionOverlay();
-    });
-    container.appendChild(button);
-  });
-  factionOverlayRendered = true;
-}
-
-function showFactionOverlay() {
-  const overlay = ui.factionOverlay;
-  if (!overlay) return;
-  if (!factionOverlayRendered) {
-    renderFactionOverlay();
-  }
-  overlay.classList.remove('hidden');
-}
-
-function hideFactionOverlay() {
-  const overlay = ui.factionOverlay;
-  if (!overlay) return;
-  overlay.classList.add('hidden');
 }
 
 initGame();
 
 // TODO: Rozbudować meta tree o kolejne gałęzie i synergy boosty.
 // TODO: Dodać kolejne meta-perki (np. prestiżowe auto-rituały).
-// TODO: Social faction totems dzielone między graczy.
 
 /*
 Dev summary:
