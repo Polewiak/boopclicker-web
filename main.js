@@ -709,6 +709,8 @@ const ui = {
   orbitCrewLayer: document.getElementById('orbit-crew-layer'),
   groundParadeLayer: document.getElementById('ground-parade-layer'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
+  backpackIcon: document.getElementById('backpack-icon'),
+  inventoryGrid: document.getElementById('inventory-grid'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
@@ -751,6 +753,10 @@ const ui = {
   shareText: document.getElementById('share-text'),
   shareCopyButton: document.getElementById('share-copy-button'),
   shareStatus: document.getElementById('share-status'),
+  tabProductionBtn: document.getElementById('tab-btn-production'),
+  tabCozinessBtn: document.getElementById('tab-btn-coziness'),
+  tabProduction: document.getElementById('tab-production'),
+  tabCoziness: document.getElementById('tab-coziness'),
   settingsSound: document.getElementById('settings-sound'),
   settingsMusic: document.getElementById('settings-music'),
   settingsParticles: document.getElementById('settings-particles'),
@@ -912,6 +918,53 @@ function setupModals() {
   });
 }
 
+function initShopTabs() {
+  const prodBtn = ui.tabProductionBtn;
+  const cozBtn = ui.tabCozinessBtn;
+  const prodTab = ui.tabProduction;
+  const cozTab = ui.tabCoziness;
+  if (!prodBtn || !cozBtn || !prodTab || !cozTab) return;
+
+  const activate = (target) => {
+    const showProduction = target === 'production';
+    prodBtn.classList.toggle('active', showProduction);
+    cozBtn.classList.toggle('active', !showProduction);
+    prodTab.classList.toggle('active', showProduction);
+    cozTab.classList.toggle('active', !showProduction);
+    prodTab.setAttribute('aria-hidden', showProduction ? 'false' : 'true');
+    cozTab.setAttribute('aria-hidden', showProduction ? 'true' : 'false');
+    prodBtn.setAttribute('aria-selected', showProduction ? 'true' : 'false');
+    cozBtn.setAttribute('aria-selected', showProduction ? 'false' : 'true');
+  };
+
+  prodBtn.addEventListener('click', () => activate('production'));
+  cozBtn.addEventListener('click', () => activate('coziness'));
+  activate('production');
+}
+
+function initInventoryModal() {
+  const icon = ui.backpackIcon;
+  const modal = document.getElementById('inventory-modal');
+  const closeBtn = document.getElementById('inventory-close');
+  if (!icon || !modal || !closeBtn) return;
+
+  const open = () => {
+    modal.classList.add('open');
+  };
+
+  const close = () => {
+    modal.classList.remove('open');
+  };
+
+  icon.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      close();
+    }
+  });
+}
+
 function updateAutoBooperCardVisuals() {
   const container = ui.autoUpgradesContainer;
   if (!container) return;
@@ -1018,6 +1071,8 @@ function initGame() {
   initProfileUI();
   initTitleUI();
   initSettingsUI();
+  initShopTabs();
+  initInventoryModal();
   initFallingHeadsLayer();
   initShareUI();
   attachHandlers();
@@ -1793,7 +1848,7 @@ function renderClickUpgradesGrid() {
 }
 
 function renderInventory() {
-  const container = document.getElementById('inventory-items');
+  const container = ui.inventoryGrid;
   if (!container) return;
   container.innerHTML = '';
 
