@@ -709,8 +709,8 @@ const ui = {
   orbitCrewLayer: document.getElementById('orbit-crew-layer'),
   groundParadeLayer: document.getElementById('ground-parade-layer'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
-  backpackTrigger: document.getElementById('backpack-trigger'),
-  inventoryGrid: document.getElementById('inventory-grid'),
+  inventoryHeader: document.getElementById('inventory-header'),
+  inventoryContent: document.getElementById('inventory-content'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
   clickUpgradesGrid: document.getElementById('click-upgrades-grid'),
@@ -944,48 +944,22 @@ function initShopTabs() {
   activate('production');
 }
 
-function initInventoryModal() {
-  const backpackTrigger = document.getElementById('backpack-trigger');
-  const inventoryModal = document.getElementById('inventory-modal');
-  const closeBtn = document.getElementById('inventory-close');
+function initInventoryAccordion() {
+  const header = ui.inventoryHeader;
+  const content = ui.inventoryContent;
+  if (!header || !content) return;
 
-  if (!backpackTrigger || !inventoryModal) {
-    console.error('CRITICAL: Backpack trigger or Modal not found in HTML');
-    return;
-  }
-
-  console.log('Backpack elements found!');
-
-  const openModal = () => {
-    inventoryModal.classList.remove('hidden');
-    inventoryModal.style.display = 'flex';
-    inventoryModal.classList.add('open');
+  const arrow = header.querySelector('.toggle-arrow');
+  const toggle = () => {
+    const isHidden = content.style.display === 'none' || content.style.display === '';
+    const nextDisplay = isHidden ? 'grid' : 'none';
+    content.style.display = nextDisplay;
+    if (arrow) {
+      arrow.classList.toggle('rotated', isHidden);
+    }
   };
 
-  const closeModalSafe = () => {
-    inventoryModal.classList.remove('open');
-    inventoryModal.classList.add('hidden');
-    inventoryModal.style.display = 'none';
-  };
-
-  backpackTrigger.addEventListener('click', () => {
-    console.log('Backpack clicked!');
-    if (inventoryModal.style.display === 'none' || inventoryModal.style.display === '') {
-      openModal();
-    } else {
-      closeModalSafe();
-    }
-  });
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeModalSafe);
-  }
-
-  inventoryModal.addEventListener('click', (event) => {
-    if (event.target === inventoryModal) {
-      closeModalSafe();
-    }
-  });
+  header.addEventListener('click', toggle);
 }
 
 function updateAutoBooperCardVisuals() {
@@ -1095,7 +1069,7 @@ function initGame() {
   initTitleUI();
   initSettingsUI();
   initShopTabs();
-  initInventoryModal();
+  initInventoryAccordion();
   initFallingHeadsLayer();
   initShareUI();
   attachHandlers();
@@ -1871,7 +1845,7 @@ function renderClickUpgradesGrid() {
 }
 
 function renderInventory() {
-  const container = ui.inventoryGrid;
+  const container = ui.inventoryContent;
   if (!container) return;
   container.innerHTML = '';
 
