@@ -709,7 +709,7 @@ const ui = {
   orbitCrewLayer: document.getElementById('orbit-crew-layer'),
   groundParadeLayer: document.getElementById('ground-parade-layer'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
-  inventoryHeader: document.getElementById('inventory-header'),
+  backpackTrigger: document.getElementById('backpack-trigger'),
   inventoryContent: document.getElementById('inventory-content'),
   offlineNotice: document.getElementById('offlineNotice'),
   critPopup: document.getElementById('crit-popup'),
@@ -944,22 +944,20 @@ function initShopTabs() {
   activate('production');
 }
 
-function initInventoryAccordion() {
-  const header = ui.inventoryHeader;
+function initInventoryToggle() {
+  const trigger = ui.backpackTrigger;
   const content = ui.inventoryContent;
-  if (!header || !content) return;
+  if (!trigger || !content) return;
 
-  const arrow = header.querySelector('.toggle-arrow');
-  const toggle = () => {
-    const isHidden = content.style.display === 'none' || content.style.display === '';
-    const nextDisplay = isHidden ? 'grid' : 'none';
-    content.style.display = nextDisplay;
-    if (arrow) {
-      arrow.classList.toggle('rotated', isHidden);
+  trigger.addEventListener('click', () => {
+    content.classList.toggle('active');
+    if (content.classList.contains('active')) {
+      // Show a placeholder when inventory is empty; renderInventory overwrites once items exist
+      if (!content.hasChildNodes()) {
+        content.textContent = 'No items yet';
+      }
     }
-  };
-
-  header.addEventListener('click', toggle);
+  });
 }
 
 function updateAutoBooperCardVisuals() {
@@ -1069,7 +1067,7 @@ function initGame() {
   initTitleUI();
   initSettingsUI();
   initShopTabs();
-  initInventoryAccordion();
+  initInventoryToggle();
   initFallingHeadsLayer();
   initShareUI();
   attachHandlers();

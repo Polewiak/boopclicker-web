@@ -70,9 +70,18 @@
 
         <div id="tab-production" class="tab-content active" role="tabpanel" style="display: block">
           <section id="click-upgrades-section" aria-label="Click upgrades">
-            <h2>Click Upgrades</h2>
+            <h2>
+              Click Upgrades
+              <img
+                id="backpack-trigger"
+                src="./assets/Backpack_Icon.png"
+                alt="Inventory"
+                title="Toggle inventory"
+              />
+            </h2>
             <div id="click-upgrades-grid"></div>
             <div id="click-upgrade-tooltip" class="upgrade-tooltip hidden"></div>
+            <div id="inventory-content" aria-live="polite"></div>
           </section>
 
           <section id="bps-upgrades" aria-label="Auto-Boopers">
@@ -96,14 +105,6 @@
           <p class="placeholder">Coming Soon</p>
         </div>
 
-        <div class="section-container inventory-section">
-          <div class="section-header" id="inventory-header">
-            <img src="./assets/Backpack_Icon.png" alt="Inventory Icon" class="header-icon" />
-            <span>My Inventory</span>
-            <span class="toggle-arrow">▼</span>
-          </div>
-          <div class="section-content" id="inventory-content" style="display: none"></div>
-        </div>
       </section>
     </div>
 
