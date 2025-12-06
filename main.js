@@ -357,6 +357,7 @@ const autoBoopersConfig = [
     name: 'Feral Toaster',
     description: 'A slightly possessed toaster that boops whenever something pops.',
     icon: '🐭',
+    visualType: 'sky',
     owned: 0,
     baseCost: 60,
     costGrowth: 1.15,
@@ -368,6 +369,7 @@ const autoBoopersConfig = [
     name: 'Overworked Fox Intern',
     description: 'Fox intern clicking boop forms all night for exposure.',
     icon: '🐱',
+    visualType: 'ground',
     owned: 0,
     baseCost: 300,
     costGrowth: 1.15,
@@ -379,6 +381,7 @@ const autoBoopersConfig = [
     name: 'Wolfgirl Call Center',
     description: "Entire call center of wolfgirls on headsets saying 'boop?' all day.",
     icon: '🐶',
+    visualType: 'ground',
     owned: 0,
     baseCost: 2000,
     costGrowth: 1.15,
@@ -390,6 +393,7 @@ const autoBoopersConfig = [
     name: 'Boomerang Otter Crew',
     description: 'They boop you, you boop them, boops come back around.',
     icon: '🦊',
+    visualType: 'sky',
     owned: 0,
     baseCost: 12_000,
     costGrowth: 1.15,
@@ -401,6 +405,7 @@ const autoBoopersConfig = [
     name: 'Hyperactive Husky Streamer',
     description: '24/7 chaos stream where chat redeems boops every second.',
     icon: '🐻',
+    visualType: 'floating',
     owned: 0,
     baseCost: 60_000,
     costGrowth: 1.15,
@@ -412,6 +417,7 @@ const autoBoopersConfig = [
     name: 'Catgirl Café Shift',
     description: 'Every order is served with a complimentary nose boop.',
     icon: '🐼',
+    visualType: 'ground',
     owned: 0,
     baseCost: 300_000,
     costGrowth: 1.15,
@@ -423,6 +429,7 @@ const autoBoopersConfig = [
     name: 'Nightshift Security Raccoons',
     description: 'They patrol all night and boop anything that moves.',
     icon: '🐯',
+    visualType: 'ground',
     owned: 0,
     baseCost: 1_500_000,
     costGrowth: 1.15,
@@ -434,6 +441,7 @@ const autoBoopersConfig = [
     name: 'Neon Fox Rave',
     description: 'Strobe lights, loud music, every beat is another boop.',
     icon: '🐨',
+    visualType: 'floating',
     owned: 0,
     baseCost: 8_000_000,
     costGrowth: 1.15,
@@ -445,6 +453,7 @@ const autoBoopersConfig = [
     name: 'Dragon Convention Booth',
     description: 'Huge con booth where the queue is only for nose boops.',
     icon: '🐷',
+    visualType: 'floating',
     owned: 0,
     baseCost: 40_000_000,
     costGrowth: 1.15,
@@ -456,6 +465,7 @@ const autoBoopersConfig = [
     name: 'Corporate Fursuit Mascots',
     description: 'Brand deals and boop campaigns across the city.',
     icon: '🐸',
+    visualType: 'floating',
     owned: 0,
     baseCost: 200_000_000,
     costGrowth: 1.15,
@@ -467,6 +477,7 @@ const autoBoopersConfig = [
     name: 'Interstellar Paw-mail Service',
     description: 'Every delivered package requires a confirmation boop.',
     icon: '🐔',
+    visualType: 'sky',
     owned: 0,
     baseCost: 1_000_000_000,
     costGrowth: 1.15,
@@ -478,6 +489,7 @@ const autoBoopersConfig = [
     name: 'Parallel Universe Paw-Lab',
     description: 'Lab that connects to parallel worlds and imports their boops.',
     icon: '🐵',
+    visualType: 'floating',
     owned: 0,
     baseCost: 6_000_000_000,
     costGrowth: 1.15,
@@ -489,6 +501,7 @@ const autoBoopersConfig = [
     name: 'Quantum Boop Collider',
     description: 'Smashes particles together to discover new, denser boops.',
     icon: '🐙',
+    visualType: 'floating',
     owned: 0,
     baseCost: 40_000_000_000,
     costGrowth: 1.15,
@@ -500,6 +513,7 @@ const autoBoopersConfig = [
     name: 'Transdimensional Floof Council',
     description: 'Ancient beings deciding the fate of all boops across realities.',
     icon: '🐲',
+    visualType: 'floating',
     owned: 0,
     baseCost: 250_000_000_000,
     costGrowth: 1.15,
@@ -511,6 +525,7 @@ const autoBoopersConfig = [
     name: 'Cosmic Boop Engine',
     description: 'A singularity that converts pure fluff into infinite boops.',
     icon: '🌌',
+    visualType: 'sky',
     owned: 0,
     baseCost: 1_000_000_000_000,
     costGrowth: 1.15,
@@ -693,7 +708,6 @@ let lastUnlockedClickCount = 0;
 let boopHoldActive = false;
 let boopPressTimeout = null;
 let boopHoldFinished = false;
-let lastParadeSignature = '';
 let autoBooperClickHandlerAttached = false;
 let fallingHeadsController = null;
 let lastComputedBps = 0;
@@ -706,8 +720,10 @@ const ui = {
   boopArea: document.getElementById('boop-area'),
   boopButton: document.getElementById('boop-button'),
   boopImageWrapper: document.getElementById('boop-image-wrapper'),
-  orbitCrewLayer: document.getElementById('orbit-crew-layer'),
-  groundParadeLayer: document.getElementById('ground-parade-layer'),
+  booperZoneSky: document.getElementById('zone-sky'),
+  booperZoneFloating: document.getElementById('zone-floating'),
+  booperZoneGround: document.getElementById('zone-ground'),
+  booperZonesWrapper: document.getElementById('booper-zones'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
   backpackTrigger: document.getElementById('backpack-trigger'),
   inventoryContent: document.getElementById('inventory-content'),
@@ -1243,12 +1259,12 @@ function initSettingsUI() {
   orbitInput.addEventListener('change', () => {
     gameState.settings.showOrbitCrew = orbitInput.checked;
     saveGame();
-    updateOrbitCrew();
+    renderBooperZones();
   });
   paradeInput.addEventListener('change', () => {
     gameState.settings.showGroundParade = paradeInput.checked;
     saveGame();
-    refreshGroundParade();
+    renderBooperZones();
   });
   rainInput.addEventListener('change', () => {
     gameState.settings.showBoopRain = rainInput.checked;
@@ -1701,8 +1717,7 @@ function updateUI() {
 
   updateStoreUI();
   renderInventory();
-  updateOrbitCrew();
-  refreshGroundParade();
+  renderBooperZones();
   if (fallingHeadsController) {
     fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
   }
@@ -1856,91 +1871,65 @@ function renderInventory() {
   });
 }
 
-function updateOrbitCrew() {
-  const layer = ui.orbitCrewLayer;
-  if (!layer) return;
-  const firstBooper = gameState.autoBoopers?.[0];
-  const firstOwned = Math.max(0, Number(firstBooper?.owned) || 0);
-  const maxIcons = 20;
-  const iconCount = Math.min(maxIcons, firstOwned);
-
-  if (!gameState.settings.showOrbitCrew || iconCount === 0) {
-    layer.innerHTML = '';
-    layer.style.display = 'none';
-    return;
-  }
-
-  layer.style.display = 'block';
-  layer.innerHTML = '';
-
-  const fragment = document.createDocumentFragment();
-  const total = iconCount;
-  const radius = Math.max(110, (ui.boopArea?.clientWidth || 240) * 0.4);
-  const iconGlyph = firstBooper?.icon || '🌀';
-
-  for (let i = 0; i < total; i += 1) {
-    const angle = (i / total) * Math.PI * 2;
-    const offsetX = Math.cos(angle) * radius;
-    const offsetY = Math.sin(angle) * radius;
-    const icon = document.createElement('div');
-    icon.className = 'orbit-icon';
-    icon.textContent = iconGlyph;
-    icon.style.left = '50%';
-    icon.style.top = '50%';
-    icon.style.transform = `translate(-50%, -50%) translate(${offsetX}px, ${offsetY}px)`;
-    fragment.appendChild(icon);
-  }
-
-  layer.appendChild(fragment);
+function getBooperSpriteCount(owned) {
+  if (!owned || owned <= 0) return 0;
+  if (owned < 5) return 1;
+  if (owned < 15) return 3;
+  if (owned < 50) return 6;
+  if (owned < 100) return 8;
+  return 10;
 }
 
-function refreshGroundParade() {
-  const layer = ui.groundParadeLayer;
-  if (!layer) return;
-  if (!gameState.settings.showGroundParade) {
-    layer.innerHTML = '';
-    layer.style.display = 'none';
+function renderBooperZones() {
+  const skyLayer = ui.booperZoneSky;
+  const floatingLayer = ui.booperZoneFloating;
+  const groundLayer = ui.booperZoneGround;
+  const wrapper = ui.booperZonesWrapper;
+  if (!skyLayer || !floatingLayer || !groundLayer || !wrapper) return;
+
+  if (gameState.settings && gameState.settings.showOrbitCrew === false && gameState.settings.showGroundParade === false) {
+    skyLayer.innerHTML = '';
+    floatingLayer.innerHTML = '';
+    groundLayer.innerHTML = '';
+    wrapper.style.display = 'none';
     return;
   }
 
-  layer.style.display = 'flex';
-  layer.innerHTML = '';
+  wrapper.style.display = 'block';
+  skyLayer.innerHTML = '';
+  floatingLayer.innerHTML = '';
+  groundLayer.innerHTML = '';
 
-  const walkers = [];
-  gameState.autoBoopers.forEach((auto) => {
-    const owned = auto.owned || 0;
-    if (owned > 0) {
-      const count = Math.min(8, owned);
-      for (let i = 0; i < count; i += 1) {
-        walkers.push(auto);
-        if (walkers.length >= 12) break;
-      }
+  const maxSpritesPerType = 12;
+
+  const placeSprite = (layer, sprite, type) => {
+    if (!layer) return;
+    const x = Math.random() * 90 + 5;
+    if (type === 'ground') {
+      sprite.style.left = `${x}%`;
+      sprite.style.bottom = `${Math.random() * 10}%`;
+    } else if (type === 'sky') {
+      sprite.style.left = `${x}%`;
+      sprite.style.top = `${Math.random() * 70}%`;
+    } else {
+      sprite.style.left = `${x}%`;
+      sprite.style.top = `${20 + Math.random() * 50}%`;
     }
-  });
+    layer.appendChild(sprite);
+  };
 
-  const signature = `${gameState.settings.showGroundParade ? 'on' : 'off'}|${walkers
-    .map((auto) => `${auto.id}:${auto.owned || 0}`)
-    .join(',')}`;
-
-  if (!walkers.length) {
-    layer.style.display = 'none';
-    lastParadeSignature = signature;
-    return;
-  }
-
-  if (signature === lastParadeSignature) {
-    return;
-  }
-  lastParadeSignature = signature;
-
-  walkers.slice(0, 12).forEach((auto) => {
-    const walker = document.createElement('div');
-    walker.className = 'ground-walker';
-    walker.textContent = auto.icon || '🐾';
-    const duration = 7 + Math.random() * 4;
-    walker.style.animationDuration = `${duration}s`;
-    walker.style.animationDelay = `${Math.random() * 3}s`;
-    layer.appendChild(walker);
+  gameState.autoBoopers.forEach((auto) => {
+    const owned = Math.max(0, Number(auto.owned) || 0);
+    const spriteCount = Math.min(maxSpritesPerType, getBooperSpriteCount(owned));
+    if (!spriteCount) return;
+    const type = auto.visualType || 'floating';
+    const layer = type === 'sky' ? skyLayer : type === 'ground' ? groundLayer : floatingLayer;
+    for (let i = 0; i < spriteCount; i += 1) {
+      const sprite = document.createElement('div');
+      sprite.className = `booper-sprite ${type}-sprite`;
+      sprite.textContent = auto.icon || '🐾';
+      placeSprite(layer, sprite, type);
+    }
   });
 }
 

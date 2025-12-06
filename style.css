@@ -205,20 +205,52 @@ textarea {
   opacity: 0.45;
 }
 
-#orbit-crew-layer {
+#booper-zones {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 3;
-  animation: orbit-spin 26s linear infinite;
+  z-index: 1;
 }
 
-.orbit-icon {
+.booper-zone {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  font-size: 16px;
-  transform-origin: center;
+  inset: 0;
+}
+
+#zone-sky {
+  top: 0;
+  height: 22%;
+}
+
+#zone-ground {
+  bottom: 0;
+  height: 22%;
+}
+
+#zone-floating {
+  top: 18%;
+  bottom: 18%;
+}
+
+.booper-sprite {
+  position: absolute;
+  font-size: 26px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  opacity: 0.9;
+}
+
+.ground-sprite {
+  animation: ground-idle 4s ease-in-out infinite;
+}
+
+.floating-sprite {
+  animation: float-idle 5s ease-in-out infinite;
+}
+
+.sky-sprite {
+  animation: sky-drift 8s linear infinite;
 }
 
 #boop-button {
@@ -264,43 +296,35 @@ textarea {
   }
 }
 
-#ground-parade-layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 8px;
-  height: 90px;
-  pointer-events: none;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  z-index: 2;
-}
-
-.ground-walker {
-  position: relative;
-  font-size: 22px;
-  animation: ground-walk 9s linear infinite;
-  display: inline-flex;
-  align-items: flex-end;
-}
-
-@keyframes orbit-spin {
-  from {
-    transform: rotate(0deg);
+@keyframes ground-idle {
+  0%,
+  100% {
+    transform: translateY(0);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    transform: translateY(-6px);
   }
 }
 
-@keyframes ground-walk {
-  from {
-    transform: translateX(-20%);
+@keyframes float-idle {
+  0%,
+  100% {
+    transform: translateY(0);
   }
-  to {
-    transform: translateX(120%);
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes sky-drift {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  50% {
+    transform: translateX(8px) translateY(-6px);
+  }
+  100% {
+    transform: translateX(0) translateY(0);
   }
 }
 
