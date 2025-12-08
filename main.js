@@ -1871,56 +1871,42 @@ function renderInventory() {
   });
 }
 
-function getBooperSpriteCount(owned) {
-  // Visual cap to avoid overcrowding the room while still reflecting progression.
-  if (!owned || owned <= 0) return 0;
-  if (owned < 5) return 1;
-  if (owned < 15) return 3;
-  if (owned < 50) return 6;
-  return 10;
-}
-
 function renderBooperZones() {
-  const skyLayer = ui.booperZoneSky;
-  const floatingLayer = ui.booperZoneFloating;
-  const groundLayer = ui.booperZoneGround;
-  const wrapper = ui.booperZonesWrapper;
-  if (!skyLayer || !floatingLayer || !groundLayer || !wrapper) return;
+  const container = ui.booperZonesWrapper;
+  if (!container) return;
 
-  wrapper.style.display = 'block';
-  skyLayer.innerHTML = '';
-  floatingLayer.innerHTML = '';
-  groundLayer.innerHTML = '';
-
-  const maxSpritesPerType = 10;
-
-  const placeSprite = (layer, sprite, type) => {
-    if (!layer) return;
-    const x = Math.random() * 90 + 5;
-    if (type === 'ground') {
-      sprite.style.left = `${x}%`;
-      sprite.style.bottom = `${Math.random() * 15}%`;
-    } else if (type === 'sky') {
-      sprite.style.left = `${x}%`;
-      sprite.style.top = `${5 + Math.random() * 15}%`;
-    } else {
-      sprite.style.left = `${x}%`;
-      sprite.style.top = `${30 + Math.random() * 30}%`;
-    }
-    layer.appendChild(sprite);
-  };
+  // Clear any previous sprites so we do not duplicate or animate old ones.
+  const oldSprites = container.querySelectorAll('.booper-sprite');
+  oldSprites.forEach((el) => el.remove());
 
   gameState.autoBoopers.forEach((auto) => {
     const owned = Math.max(0, Number(auto.owned) || 0);
-    const spriteCount = Math.min(maxSpritesPerType, getBooperSpriteCount(owned));
-    if (!spriteCount) return;
-    const type = auto.visualType || 'floating';
-    const layer = type === 'sky' ? skyLayer : type === 'ground' ? groundLayer : floatingLayer;
-    for (let i = 0; i < spriteCount; i += 1) {
+    if (!owned) return;
+
+    // Cap the number of rendered sprites per type to avoid clutter.
+    let countToRender = Math.min(owned, 5);
+    if (owned > 10) countToRender = 8;
+
+    for (let i = 0; i < countToRender; i += 1) {
       const sprite = document.createElement('div');
-      sprite.className = `booper-sprite ${type}-sprite`;
+      sprite.classList.add('booper-sprite');
+
+      const type = auto.visualType || 'floating';
+      if (type === 'ground') {
+        sprite.classList.add('zone-ground');
+        sprite.style.left = `${Math.random() * 80 + 10}%`;
+      } else if (type === 'sky') {
+        sprite.classList.add('zone-sky');
+        sprite.style.left = `${Math.random() * 80 + 10}%`;
+      } else {
+        sprite.classList.add('zone-float');
+        const offsetX = (Math.random() - 0.5) * 400;
+        const offsetY = (Math.random() - 0.5) * 400;
+        sprite.style.transform = `translate(-50%, -50%) translate(${offsetX}px, ${offsetY}px)`;
+      }
+
       sprite.textContent = auto.icon || '🐾';
-      placeSprite(layer, sprite, type);
+      container.appendChild(sprite);
     }
   });
 }

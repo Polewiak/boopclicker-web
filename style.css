@@ -196,6 +196,11 @@ textarea {
   background: none;
 }
 
+.game-view-container {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
 .falling-head-particle {
   position: absolute;
   will-change: transform;
@@ -218,41 +223,58 @@ textarea {
   pointer-events: none;
 }
 
-#zone-sky {
-  top: 0;
-  height: 20%;
-}
-
-#zone-floating {
-  top: 22%;
-  height: 46%;
-}
-
-#zone-ground {
-  bottom: 0;
-  height: 24%;
-}
-
+/* Force overrides for new zone-based sprites */
 .booper-sprite {
-  position: absolute;
-  font-size: 26px;
-  line-height: 1;
+  position: absolute !important;
+  transition: all 0.5s ease-out;
   pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: contain;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
-  opacity: 0.9;
-  transition: transform 0.6s ease-in-out;
 }
 
-.ground-sprite {
-  animation: ground-idle 4s ease-in-out infinite;
+.zone-ground {
+  bottom: 5% !important;
+  top: auto !important;
+  transform: translateY(0);
+  animation: bounce-ground 2s infinite ease-in-out;
 }
 
-.floating-sprite {
-  animation: float-idle 5s ease-in-out infinite;
+.zone-sky {
+  top: 5% !important;
+  bottom: auto !important;
+  animation: float-sky 4s infinite ease-in-out;
 }
 
-.sky-sprite {
-  animation: sky-drift 8s linear infinite;
+.zone-float {
+  top: 50% !important;
+  left: 50% !important;
+}
+
+@keyframes bounce-ground {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes float-sky {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(15px);
+  }
 }
 
 #boop-button {
