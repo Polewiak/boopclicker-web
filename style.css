@@ -210,17 +210,12 @@ textarea {
   opacity: 0.45;
 }
 
-#booper-zones {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.booper-zone {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+#zone-visuals {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
 }
 
 /* Force overrides for new zone-based sprites */

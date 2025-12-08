@@ -704,6 +704,7 @@ let saveTimer = 0;
 let offlineNoticeTimeout = null;
 let passiveGainRemainder = 0;
 let storeNeedsRender = true;
+let booperZonesDirty = true;
 let lastUnlockedClickCount = 0;
 let boopHoldActive = false;
 let boopPressTimeout = null;
@@ -720,10 +721,7 @@ const ui = {
   boopArea: document.getElementById('boop-area'),
   boopButton: document.getElementById('boop-button'),
   boopImageWrapper: document.getElementById('boop-image-wrapper'),
-  booperZoneSky: document.getElementById('zone-sky'),
-  booperZoneFloating: document.getElementById('zone-floating'),
-  booperZoneGround: document.getElementById('zone-ground'),
-  booperZonesWrapper: document.getElementById('booper-zones'),
+  booperZonesWrapper: document.getElementById('zone-visuals'),
   fallingHeadsLayer: document.getElementById('falling-heads-layer'),
   backpackTrigger: document.getElementById('backpack-trigger'),
   inventoryContent: document.getElementById('inventory-content'),
@@ -816,6 +814,10 @@ function playSfx(name) {
 
 function markStoreDirty() {
   storeNeedsRender = true;
+}
+
+function markBooperZonesDirty() {
+  booperZonesDirty = true;
 }
 
 function hideUpgradeTooltips() {
@@ -1259,11 +1261,13 @@ function initSettingsUI() {
   orbitInput.addEventListener('change', () => {
     gameState.settings.showOrbitCrew = orbitInput.checked;
     saveGame();
+    markBooperZonesDirty();
     renderBooperZones();
   });
   paradeInput.addEventListener('change', () => {
     gameState.settings.showGroundParade = paradeInput.checked;
     saveGame();
+    markBooperZonesDirty();
     renderBooperZones();
   });
   rainInput.addEventListener('change', () => {
@@ -1382,6 +1386,7 @@ function loadGame() {
   checkAchievements();
   updateHighscores();
   markStoreDirty();
+  markBooperZonesDirty();
 }
 
 function saveGame() {
@@ -1717,7 +1722,9 @@ function updateUI() {
 
   updateStoreUI();
   renderInventory();
-  renderBooperZones();
+  if (booperZonesDirty) {
+    renderBooperZones();
+  }
   if (fallingHeadsController) {
     fallingHeadsController.update(lastComputedBps, getCurrentHeadIconUrl());
   }
@@ -1875,15 +1882,19 @@ function renderBooperZones() {
   const container = ui.booperZonesWrapper;
   if (!container) return;
 
-  // Clear any previous sprites so we do not duplicate or animate old ones.
-  const oldSprites = container.querySelectorAll('.booper-sprite');
-  oldSprites.forEach((el) => el.remove());
+  // Respect settings that hide all booper visuals.
+  if (!gameState.settings.showOrbitCrew && !gameState.settings.showGroundParade) {
+    container.innerHTML = '';
+    booperZonesDirty = false;
+    return;
+  }
+
+  container.innerHTML = '';
 
   gameState.autoBoopers.forEach((auto) => {
     const owned = Math.max(0, Number(auto.owned) || 0);
     if (!owned) return;
 
-    // Cap the number of rendered sprites per type to avoid clutter.
     let countToRender = Math.min(owned, 5);
     if (owned > 10) countToRender = 8;
 
@@ -1909,6 +1920,8 @@ function renderBooperZones() {
       container.appendChild(sprite);
     }
   });
+
+  booperZonesDirty = false;
 }
 
 function renderAutoBoopers() {
@@ -2547,6 +2560,7 @@ function buyAutoBooper(id) {
   gameState.totalAutoBoopers += 1;
   recalculateProductionStats();
   markStoreDirty();
+  markBooperZonesDirty();
   checkAchievements();
 
   updateUI();
@@ -2613,6 +2627,7 @@ function hardResetGame() {
   recalculateProductionStats();
   updateGlobalMultiplier();
   markStoreDirty();
+  markBooperZonesDirty();
   saveGame();
   updateUI();
 }
@@ -2948,6 +2963,7 @@ function resetProgressForPrestige() {
   gameState.autoBoopers = autoBoopersConfig.map((booper) => ({ ...booper }));
   gameState.lastUpdate = Date.now();
   markStoreDirty();
+  markBooperZonesDirty();
   // Meta-perki oraz Boop Essence pozostają nietknięte podczas prestiżu.
 }
 
