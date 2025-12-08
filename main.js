@@ -1872,11 +1872,11 @@ function renderInventory() {
 }
 
 function getBooperSpriteCount(owned) {
+  // Visual cap to avoid overcrowding the room while still reflecting progression.
   if (!owned || owned <= 0) return 0;
   if (owned < 5) return 1;
   if (owned < 15) return 3;
   if (owned < 50) return 6;
-  if (owned < 100) return 8;
   return 10;
 }
 
@@ -1887,33 +1887,25 @@ function renderBooperZones() {
   const wrapper = ui.booperZonesWrapper;
   if (!skyLayer || !floatingLayer || !groundLayer || !wrapper) return;
 
-  if (gameState.settings && gameState.settings.showOrbitCrew === false && gameState.settings.showGroundParade === false) {
-    skyLayer.innerHTML = '';
-    floatingLayer.innerHTML = '';
-    groundLayer.innerHTML = '';
-    wrapper.style.display = 'none';
-    return;
-  }
-
   wrapper.style.display = 'block';
   skyLayer.innerHTML = '';
   floatingLayer.innerHTML = '';
   groundLayer.innerHTML = '';
 
-  const maxSpritesPerType = 12;
+  const maxSpritesPerType = 10;
 
   const placeSprite = (layer, sprite, type) => {
     if (!layer) return;
     const x = Math.random() * 90 + 5;
     if (type === 'ground') {
       sprite.style.left = `${x}%`;
-      sprite.style.bottom = `${Math.random() * 10}%`;
+      sprite.style.bottom = `${Math.random() * 15}%`;
     } else if (type === 'sky') {
       sprite.style.left = `${x}%`;
-      sprite.style.top = `${Math.random() * 70}%`;
+      sprite.style.top = `${5 + Math.random() * 15}%`;
     } else {
       sprite.style.left = `${x}%`;
-      sprite.style.top = `${20 + Math.random() * 50}%`;
+      sprite.style.top = `${30 + Math.random() * 30}%`;
     }
     layer.appendChild(sprite);
   };
